@@ -4,43 +4,45 @@ import {
   LayoutDashboard, Users, Shield, Monitor, FolderTree,
   ScrollText, Settings, LogOut, Server, ChevronLeft, ChevronRight,
   BarChart3, FileText, GitBranch, Bell, Camera, Activity,
-  ShieldCheck, Cog, Globe, ChevronDown, Check, RefreshCw, Network, Wifi, Radio
+  ShieldCheck, Cog, Globe, ChevronDown, Check, RefreshCw, Wifi
 } from 'lucide-react'
-import { getWorkflowRequests, getActiveSessions, logout as apiLogout, getDomains } from '../api'
+import { getWorkflowRequests, getActiveSessions, logout as apiLogout, getDomains, getSettings } from '../api'
 
 export default function Layout() {
   const [collapsed,     setCollapsed]     = useState(false)
   const [pendingCount,  setPendingCount]  = useState(0)
   const [sessionsCount, setSessionsCount] = useState(0)
+  const [permissions,   setPermissions]   = useState({})
+  const [permsLoaded,   setPermsLoaded]   = useState(false)
 
   // Domain switcher state
-  const [domains,          setDomains]          = useState([])
-  const [domainOpen,       setDomainOpen]        = useState(false)
-  const [networkOpen,      setNetworkOpen]       = useState(false)
-  const [domainSwitching,  setDomainSwitching]   = useState(false)
+  const [domains,         setDomains]         = useState([])
+  const [domainOpen,      setDomainOpen]       = useState(false)
+  const [domainSwitching, setDomainSwitching]  = useState(false)
   const domainRef = useRef(null)
 
-  const navigate = useNavigate()
-  const user     = JSON.parse(localStorage.getItem('user') || '{}')
-  const isAdmin  = user.role === 'Admin'
+  const navigate  = useNavigate()
+  const user      = JSON.parse(localStorage.getItem('user') || '{}')
+  const isAdmin   = user.role === 'Admin'
+  const isHelpdesk = user.role === 'Helpdesk'
 
-  // Read active domain from localStorage
   const activeDomainId   = localStorage.getItem('domain_id')   || ''
   const activeDomainName = localStorage.getItem('domain_name') || 'Unknown Domain'
 
-  // ── Load badge counts ──────────────────────────────────
+  // ── On Mount ──────────────────────────────────────────
   useEffect(() => {
+    fetchPermissions()
     loadBadges()
     const interval = setInterval(loadBadges, 30000)
     return () => clearInterval(interval)
   }, [])
 
-  // ── Load domains for switcher (Admin only) ─────────────
+  // ── Load Domains for Admin Switcher ───────────────────
   useEffect(() => {
     if (isAdmin) loadDomains()
   }, [isAdmin])
 
-  // ── Close domain dropdown on outside click ─────────────
+  // ── Close Domain Dropdown on Outside Click ────────────
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (domainRef.current && !domainRef.current.contains(e.target)) {
@@ -51,20 +53,43 @@ export default function Layout() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // ── Fetch Permissions from Backend ────────────────────
+  const fetchPermissions = async () => {
+    // Admin does not need permission checks
+    if (isAdmin) {
+      setPermsLoaded(true)
+      return
+    }
+    try {
+      const settingsData = await getSettings()
+      const key = isHelpdesk
+        ? 'helpdesk_sidebar_permissions'
+        : 'viewer_sidebar_permissions'
+      let perms = {}
+      try {
+        perms = typeof settingsData[key] === 'string'
+          ? JSON.parse(settingsData[key])
+          : (settingsData[key] || {})
+      } catch { perms = {} }
+      setPermissions(perms)
+    } catch (err) {
+      console.error('Failed to load permissions', err)
+      setPermissions({})
+    } finally {
+      setPermsLoaded(true)
+    }
+  }
+
   const loadBadges = async () => {
     try {
       const data = await getWorkflowRequests('pending')
       setPendingCount(data.count || 0)
-    } catch {
-      setPendingCount(0)
-    }
+    } catch { setPendingCount(0) }
     if (isAdmin) {
       try {
         const data = await getActiveSessions()
         setSessionsCount(data.count || 0)
-      } catch {
-        setSessionsCount(0)
-      }
+      } catch { setSessionsCount(0) }
     }
   }
 
@@ -72,12 +97,10 @@ export default function Layout() {
     try {
       const data = await getDomains()
       setDomains(data.domains || [])
-    } catch {
-      setDomains([])
-    }
+    } catch { setDomains([]) }
   }
 
-  // ── Switch domain ──────────────────────────────────────
+  // ── Domain Switch ─────────────────────────────────────
   const handleDomainSwitch = async (domain) => {
     if (String(domain.id) === String(activeDomainId)) {
       setDomainOpen(false)
@@ -88,12 +111,10 @@ export default function Layout() {
     try {
       localStorage.setItem('domain_id',   String(domain.id))
       localStorage.setItem('domain_name', domain.name)
-      // Update user object in localStorage
       const u = JSON.parse(localStorage.getItem('user') || '{}')
       u.domain_id   = domain.id
       u.domain_name = domain.name
       localStorage.setItem('user', JSON.stringify(u))
-      // Reload current page to refetch all data from new domain
       window.location.reload()
     } catch {
       setDomainSwitching(false)
@@ -109,37 +130,43 @@ export default function Layout() {
     navigate('/login')
   }
 
-  // ── Menu Items ─────────────────────────────────────────
-  const menu = [
-    { to: '/',                 icon: LayoutDashboard, label: 'Dashboard'        },
-    { to: '/users',            icon: Users,           label: 'Users'            },
-    { to: '/groups',           icon: Shield,          label: 'Groups'           },
-    { to: '/computers',        icon: Monitor,         label: 'Computers'        },
-    { to: '/ous',              icon: FolderTree,      label: 'OUs'              },
-
-    // ── Network Group (DNS/DHCP - Admin only) ──
-    { to: '/dns',              icon: Globe,           label: 'DNS',                adminOnly: true, network: true },
-    { to: '/dhcp',             icon: Wifi,            label: 'DHCP',               adminOnly: true, network: true },
-    { to: '/service-accounts', icon: Cog,             label: 'Service Accounts' },
-    { to: '/gpo',              icon: ShieldCheck,     label: 'GPOs'             },
-    { to: '/photos',           icon: Camera,          label: 'User Photos'      },
-    { to: '/templates',        icon: FileText,        label: 'Templates'        },
-    { to: '/workflows',        icon: GitBranch,       label: 'Workflows',       badge: pendingCount  },
-    { to: '/sessions',         icon: Activity,        label: 'Sessions',        badge: sessionsCount, adminOnly: true },
-    { to: '/reports',          icon: BarChart3,       label: 'Reports'          },
-    { to: '/audit',            icon: ScrollText,      label: 'Audit Logs'       },
-    { to: '/settings',         icon: Settings,        label: 'Settings',        adminOnly: true },
+  // ── Menu Definition ───────────────────────────────────
+  const allMenu = [
+    { to: '/',                 icon: LayoutDashboard, label: 'Dashboard',        id: 'dashboard'        },
+    { to: '/users',            icon: Users,           label: 'Users',            id: 'users'            },
+    { to: '/groups',           icon: Shield,          label: 'Groups',           id: 'groups'           },
+    { to: '/computers',        icon: Monitor,         label: 'Computers',        id: 'computers'        },
+    { to: '/ous',              icon: FolderTree,      label: 'OUs',              id: 'ous'              },
+    { to: '/dns',              icon: Globe,           label: 'DNS',              id: 'dns'              },
+    { to: '/dhcp',             icon: Wifi,            label: 'DHCP',             id: 'dhcp'             },
+    { to: '/service-accounts', icon: Cog,             label: 'Service Accounts', id: 'service-accounts' },
+    { to: '/gpo',              icon: ShieldCheck,     label: 'GPOs',             id: 'gpo'              },
+    { to: '/photos',           icon: Camera,          label: 'User Photos',      id: 'photos'           },
+    { to: '/templates',        icon: FileText,        label: 'Templates',        id: 'templates'        },
+    { to: '/workflows',        icon: GitBranch,       label: 'Workflows',        id: 'workflows',       badge: pendingCount  },
+    { to: '/sessions',         icon: Activity,        label: 'Sessions',         id: 'sessions',        badge: sessionsCount },
+    { to: '/reports',          icon: BarChart3,       label: 'Reports',          id: 'reports'          },
+    { to: '/audit',            icon: ScrollText,      label: 'Audit Logs',       id: 'audit',           adminOnly: true },
+    { to: '/settings',         icon: Settings,        label: 'Settings',         id: 'settings',        adminOnly: true },
   ]
 
-  const visibleMenu = menu.filter(item => !item.adminOnly || isAdmin)
+  // ── Filter Menu by Role + Permissions ─────────────────
+  const visibleMenu = allMenu.filter(item => {
+    // Admin sees everything always
+    if (isAdmin) return true
+    // adminOnly items never shown to non-admins
+    if (item.adminOnly) return false
+    // For Helpdesk and Viewer check permission toggle
+    return permissions[item.id] === true
+  })
 
   return (
     <div className="flex h-screen bg-slate-900 text-white">
 
-      {/* ── Sidebar ───────────────────────────────────── */}
+      {/* ── Sidebar ─────────────────────────────────────── */}
       <aside className={`${collapsed ? 'w-20' : 'w-64'} bg-slate-800 border-r border-slate-700 flex flex-col transition-all duration-200`}>
 
-        {/* Logo Header */}
+        {/* Logo */}
         <div className="p-4 border-b border-slate-700 flex items-center justify-between">
           {!collapsed && (
             <div className="flex items-center gap-3">
@@ -148,7 +175,7 @@ export default function Layout() {
               </div>
               <div>
                 <div className="font-bold text-sm">DC Manager Pro</div>
-                <div className="text-xs text-slate-400">v2.6.0</div>
+                <div className="text-xs text-slate-400">v2.6.1</div>
               </div>
             </div>
           )}
@@ -161,46 +188,52 @@ export default function Layout() {
           </button>
         </div>
 
-        {/* Navigation Menu */}
+        {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {visibleMenu.map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition group relative ${
-                  isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-300 hover:bg-slate-700'
-                }`
-              }
-              title={collapsed ? item.label : ''}
-            >
-              <item.icon size={18} className="flex-shrink-0" />
-              {!collapsed && (
-                <>
-                  <span className="text-sm flex-1">{item.label}</span>
-                  {item.badge > 0 && (
-                    <span className={`px-2 py-0.5 text-white text-xs rounded-full font-bold ${
-                      item.to === '/workflows' ? 'bg-orange-500' :
-                      item.to === '/sessions'  ? 'bg-green-500'  :
-                      'bg-red-500'
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
-                </>
-              )}
-              {collapsed && item.badge > 0 && (
-                <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
-                  item.to === '/workflows' ? 'bg-orange-500' :
-                  item.to === '/sessions'  ? 'bg-green-500'  :
-                  'bg-red-500'
-                }`} />
-              )}
-            </NavLink>
-          ))}
+          {!permsLoaded ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw size={18} className="animate-spin text-slate-500" />
+            </div>
+          ) : (
+            visibleMenu.map(item => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg transition group relative ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-300 hover:bg-slate-700'
+                  }`
+                }
+                title={collapsed ? item.label : ''}
+              >
+                <item.icon size={18} className="flex-shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="text-sm flex-1">{item.label}</span>
+                    {item.badge > 0 && (
+                      <span className={`px-2 py-0.5 text-white text-xs rounded-full font-bold ${
+                        item.to === '/workflows' ? 'bg-orange-500' :
+                        item.to === '/sessions'  ? 'bg-green-500'  :
+                        'bg-red-500'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </>
+                )}
+                {collapsed && item.badge > 0 && (
+                  <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
+                    item.to === '/workflows' ? 'bg-orange-500' :
+                    item.to === '/sessions'  ? 'bg-green-500'  :
+                    'bg-red-500'
+                  }`} />
+                )}
+              </NavLink>
+            ))
+          )}
         </nav>
 
         {/* User Profile & Logout */}
@@ -243,65 +276,46 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* ── Main Content Area ──────────────────────────── */}
+      {/* ── Main Content ────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden">
 
-        {/* ── Top Header Bar with Domain Switcher ───────── */}
+        {/* Top Header */}
         <header className="h-12 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-4 flex-shrink-0">
 
-          {/* Left — current domain indicator */}
+          {/* Left — Active Domain */}
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Globe size={13} className="text-slate-500" />
             <span className="hidden sm:inline">Active Domain:</span>
             <span className="text-slate-200 font-medium">{activeDomainName}</span>
           </div>
 
-          {/* Right — domain switcher (Admin only) */}
+          {/* Right — Domain Switcher */}
           <div className="flex items-center gap-3">
 
-            {/* Admin domain switcher dropdown */}
+            {/* Admin domain switcher */}
             {isAdmin && (
               <div className="relative" ref={domainRef}>
                 <button
                   onClick={() => setDomainOpen(!domainOpen)}
                   disabled={domainSwitching}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-xs text-slate-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Switch domain"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-xs text-slate-200 transition disabled:opacity-50"
                 >
                   {domainSwitching ? (
-                    <>
-                      <RefreshCw size={12} className="animate-spin" />
-                      <span>Switching...</span>
-                    </>
+                    <><RefreshCw size={12} className="animate-spin" /><span>Switching...</span></>
                   ) : (
-                    <>
-                      <Globe size={12} className="text-blue-400" />
-                      <span>Switch Domain</span>
-                      <ChevronDown
-                        size={12}
-                        className={`text-slate-400 transition-transform ${domainOpen ? 'rotate-180' : ''}`}
-                      />
-                    </>
+                    <><Globe size={12} className="text-blue-400" /><span>Switch Domain</span>
+                    <ChevronDown size={12} className={`text-slate-400 transition-transform ${domainOpen ? 'rotate-180' : ''}`} /></>
                   )}
                 </button>
 
-                {/* Dropdown */}
                 {domainOpen && !domainSwitching && (
                   <div className="absolute right-0 top-full mt-1 w-64 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl shadow-black/50 z-50 overflow-hidden">
-
-                    {/* Header */}
                     <div className="px-3 py-2 border-b border-slate-700">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        Select Domain
-                      </p>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Select Domain</p>
                     </div>
-
-                    {/* Domain list */}
                     <div className="py-1 max-h-64 overflow-y-auto">
                       {domains.length === 0 ? (
-                        <div className="px-3 py-4 text-center text-xs text-slate-500">
-                          No domains available
-                        </div>
+                        <div className="px-3 py-4 text-center text-xs text-slate-500">No domains available</div>
                       ) : (
                         domains.map((d) => {
                           const isActive = String(d.id) === String(activeDomainId)
@@ -310,48 +324,26 @@ export default function Layout() {
                               key={d.id}
                               onClick={() => handleDomainSwitch(d)}
                               className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition ${
-                                isActive
-                                  ? 'bg-blue-600/20 text-blue-300'
-                                  : 'text-slate-200 hover:bg-slate-700'
+                                isActive ? 'bg-blue-600/20 text-blue-300' : 'text-slate-200 hover:bg-slate-700'
                               }`}
                             >
-                              {/* Active indicator */}
-                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                isActive ? 'bg-blue-600' : 'bg-slate-700'
-                              }`}>
-                                {isActive
-                                  ? <Check size={13} className="text-white" />
-                                  : <Globe size={13} className="text-slate-400" />
-                                }
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                                {isActive ? <Check size={13} className="text-white" /> : <Globe size={13} className="text-slate-400" />}
                               </div>
-
-                              {/* Domain info */}
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-medium truncate">{d.name}</div>
                                 <div className="text-xs text-slate-500 truncate">{d.ad_domain}</div>
                               </div>
-
-                              {/* Default badge */}
                               {d.is_default && (
-                                <span className="flex-shrink-0 px-1.5 py-0.5 bg-slate-600 text-slate-300 text-[10px] rounded font-medium">
-                                  Default
-                                </span>
+                                <span className="flex-shrink-0 px-1.5 py-0.5 bg-slate-600 text-slate-300 text-[10px] rounded font-medium">Default</span>
                               )}
                             </button>
                           )
                         })
                       )}
                     </div>
-
-                    {/* Footer — manage domains link */}
                     <div className="px-3 py-2 border-t border-slate-700">
-                      <button
-                        onClick={() => {
-                          setDomainOpen(false)
-                          navigate('/settings')
-                        }}
-                        className="text-xs text-blue-400 hover:text-blue-300 transition"
-                      >
+                      <button onClick={() => { setDomainOpen(false); navigate('/settings') }} className="text-xs text-blue-400 hover:text-blue-300 transition">
                         Manage domains in Settings →
                       </button>
                     </div>
@@ -371,12 +363,12 @@ export default function Layout() {
           </div>
         </header>
 
-        {/* ── Page Content ──────────────────────────────── */}
+        {/* Page Content */}
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
-      </div>
 
+      </div>
     </div>
   )
 }

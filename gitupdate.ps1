@@ -1,5 +1,3 @@
-﻿$gitUpdateScript = "C:\DC Pro\public\gitupdate.ps1"
-$code = @'
 # ═══════════════════════════════════════════════════════════════════
 # DC Manager Pro - Git Update Script v2.6.1
 # ═══════════════════════════════════════════════════════════════════
@@ -154,6 +152,3 @@ Write-Host ""
 Write-OK "Update complete!"
 Write-Host ""
 Read-Host "  Press Enter to exit"
-'@
-[System.IO.File]::WriteAllText($gitUpdateScript, $code)
-Write-Host "✅ gitupdate.ps1 updated at $gitUpdateScript"

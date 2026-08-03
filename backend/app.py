@@ -122,6 +122,42 @@ def get_dhcp_service(
     return get_dhcp_service_for_domain(domain)
 
 
+
+# ═══════════════════════════════════════════════════════════
+# PERMISSION HELPER - Toggleable Role-Based Access
+# ═══════════════════════════════════════════════════════════
+def require_permission(module: str):
+    """
+    Dynamic permission checker for sidebar-toggleable modules.
+    Admin: always allowed.
+    Helpdesk/Viewer: allowed only if enabled in app_settings JSON.
+    audit and settings: Admin only, never toggleable.
+    """
+    async def permission_checker(
+        cu: AppUser = Depends(get_current_user),
+        db: Session = Depends(get_db)
+    ):
+        if cu.role == "Admin":
+            return cu
+        if module in ["audit", "settings"]:
+            raise HTTPException(status_code=403, detail="Admin access required")
+        setting_key = (
+            "helpdesk_sidebar_permissions"
+            if cu.role == "Helpdesk"
+            else "viewer_sidebar_permissions"
+        )
+        try:
+            perms_raw = get_setting(db, setting_key, "{}")
+            perms = json.loads(perms_raw)
+        except Exception:
+            perms = {}
+        if perms.get(module) is True:
+            return cu
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access to '{module}' is disabled for your role"
+        )
+    return permission_checker
 # ═══════════════════════════════════════════════════════════
 # HEALTH & AUTH
 # ═══════════════════════════════════════════════════════════
@@ -1423,7 +1459,7 @@ async def get_gpo_links(
 # ═══════════════════════════════════════════════════════════
 @app.get("/api/sessions")
 async def get_active_sessions(
-    cu: AppUser  = Depends(require_admin),
+    cu: AppUser  = Depends(require_permission("sessions")),
     db: Session  = Depends(get_db)
 ):
     co = datetime.utcnow() - timedelta(hours=8)
@@ -1456,7 +1492,7 @@ async def get_active_sessions(
 @app.delete("/api/sessions/{session_id}")
 async def terminate_session(
     session_id: int,
-    cu:         AppUser  = Depends(require_admin),
+    cu:         AppUser  = Depends(require_permission("sessions")),
     db:         Session  = Depends(get_db)
 ):
     s = db.query(ActiveSession).filter(ActiveSession.id == session_id).first()
@@ -2500,7 +2536,7 @@ async def export_report(
 # ═══════════════════════════════════════════════════════════
 @app.get("/api/dns/zones")
 async def list_dns_zones(
-    cu:  AppUser    = Depends(require_admin),
+    cu:  AppUser    = Depends(require_permission("dns")),
     svc: DNSService = Depends(get_dns_service)
 ):
     """List all DNS zones on the active domain's DNS server"""
@@ -2514,7 +2550,7 @@ async def list_dns_zones(
 async def list_dns_records(
     zone_name: str,
     record_type: Optional[str] = None,
-    cu:  AppUser    = Depends(require_admin),
+    cu:  AppUser    = Depends(require_permission("dns")),
     svc: DNSService = Depends(get_dns_service)
 ):
     """List DNS records in a zone (optionally filtered by A/CNAME/PTR)"""
@@ -2529,7 +2565,7 @@ async def create_dns_a_record(
     zone_name: str,
     payload: dict,
     request: Request,
-    cu:  AppUser    = Depends(require_admin),
+    cu:  AppUser    = Depends(require_permission("dns")),
     db:  Session    = Depends(get_db),
     svc: DNSService = Depends(get_dns_service)
 ):
@@ -2554,7 +2590,7 @@ async def create_dns_cname_record(
     zone_name: str,
     payload: dict,
     request: Request,
-    cu:  AppUser    = Depends(require_admin),
+    cu:  AppUser    = Depends(require_permission("dns")),
     db:  Session    = Depends(get_db),
     svc: DNSService = Depends(get_dns_service)
 ):
@@ -2579,7 +2615,7 @@ async def create_dns_ptr_record(
     zone_name: str,
     payload: dict,
     request: Request,
-    cu:  AppUser    = Depends(require_admin),
+    cu:  AppUser    = Depends(require_permission("dns")),
     db:  Session    = Depends(get_db),
     svc: DNSService = Depends(get_dns_service)
 ):
@@ -2604,7 +2640,7 @@ async def update_dns_record(
     zone_name: str,
     payload: dict,
     request: Request,
-    cu:  AppUser    = Depends(require_admin),
+    cu:  AppUser    = Depends(require_permission("dns")),
     db:  Session    = Depends(get_db),
     svc: DNSService = Depends(get_dns_service)
 ):
@@ -2633,7 +2669,7 @@ async def delete_dns_record(
     hostname: str,
     record_type: str,
     request: Request,
-    cu:  AppUser    = Depends(require_admin),
+    cu:  AppUser    = Depends(require_permission("dns")),
     db:  Session    = Depends(get_db),
     svc: DNSService = Depends(get_dns_service)
 ):
@@ -2651,7 +2687,7 @@ async def delete_dns_record(
 
 @app.get("/api/dns/test")
 async def test_dns_connection(
-    cu:  AppUser    = Depends(require_admin),
+    cu:  AppUser    = Depends(require_permission("dns")),
     svc: DNSService = Depends(get_dns_service)
 ):
     """Test DNS server connectivity"""
@@ -2665,7 +2701,7 @@ async def test_dns_connection(
 # ═══════════════════════════════════════════════════════════
 @app.get("/api/dhcp/scopes")
 async def list_dhcp_scopes(
-    cu:  AppUser     = Depends(require_admin),
+    cu:  AppUser     = Depends(require_permission("dhcp")),
     svc: DHCPService = Depends(get_dhcp_service)
 ):
     """List all DHCP scopes on the active domain's DHCP server"""
@@ -2679,7 +2715,7 @@ async def list_dhcp_scopes(
 @app.get("/api/dhcp/scopes/{scope_id}/reservations")
 async def list_dhcp_reservations(
     scope_id: str,
-    cu:  AppUser     = Depends(require_admin),
+    cu:  AppUser     = Depends(require_permission("dhcp")),
     svc: DHCPService = Depends(get_dhcp_service)
 ):
     """List reservations in a DHCP scope"""
@@ -2694,7 +2730,7 @@ async def create_dhcp_reservation(
     scope_id: str,
     payload: dict,
     request: Request,
-    cu:  AppUser     = Depends(require_admin),
+    cu:  AppUser     = Depends(require_permission("dhcp")),
     db:  Session     = Depends(get_db),
     svc: DHCPService = Depends(get_dhcp_service)
 ):
@@ -2722,7 +2758,7 @@ async def update_dhcp_reservation(
     ip: str,
     payload: dict,
     request: Request,
-    cu:  AppUser     = Depends(require_admin),
+    cu:  AppUser     = Depends(require_permission("dhcp")),
     db:  Session     = Depends(get_db),
     svc: DHCPService = Depends(get_dhcp_service)
 ):
@@ -2745,7 +2781,7 @@ async def delete_dhcp_reservation(
     scope_id: str,
     ip: str,
     request: Request,
-    cu:  AppUser     = Depends(require_admin),
+    cu:  AppUser     = Depends(require_permission("dhcp")),
     db:  Session     = Depends(get_db),
     svc: DHCPService = Depends(get_dhcp_service)
 ):
@@ -2764,7 +2800,7 @@ async def delete_dhcp_reservation(
 @app.get("/api/dhcp/scopes/{scope_id}/leases")
 async def list_dhcp_leases(
     scope_id: str,
-    cu:  AppUser     = Depends(require_admin),
+    cu:  AppUser     = Depends(require_permission("dhcp")),
     svc: DHCPService = Depends(get_dhcp_service)
 ):
     """List active DHCP leases in a scope"""
@@ -2779,7 +2815,7 @@ async def release_dhcp_lease(
     scope_id: str,
     ip: str,
     request: Request,
-    cu:  AppUser     = Depends(require_admin),
+    cu:  AppUser     = Depends(require_permission("dhcp")),
     db:  Session     = Depends(get_db),
     svc: DHCPService = Depends(get_dhcp_service)
 ):
@@ -2799,7 +2835,7 @@ async def delete_dhcp_lease(
     scope_id: str,
     ip: str,
     request: Request,
-    cu:  AppUser     = Depends(require_admin),
+    cu:  AppUser     = Depends(require_permission("dhcp")),
     db:  Session     = Depends(get_db),
     svc: DHCPService = Depends(get_dhcp_service)
 ):
@@ -2816,7 +2852,7 @@ async def delete_dhcp_lease(
 
 @app.get("/api/dhcp/test")
 async def test_dhcp_connection(
-    cu:  AppUser     = Depends(require_admin),
+    cu:  AppUser     = Depends(require_permission("dhcp")),
     svc: DHCPService = Depends(get_dhcp_service)
 ):
     """Test DHCP server connectivity"""

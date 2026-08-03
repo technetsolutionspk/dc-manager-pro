@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AD Manager Pro v2.4.0 - Feature Presentation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+
+  body {
+    padding: 20px 20px 100px 20px;
+  }
+
+  .slideshow {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 120px);
+  }
+
+  .slide {
+    display: none;
+    width: 100%;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 40px 50px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: fadeIn 0.4s ease;
+  }
+
+  .slide.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  ::-webkit-scrollbar { width: 12px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 6px;
+    border: 2px solid #0f172a;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+  .slide-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #334155;
+    flex-wrap: wrap;
+  }
+
+  .slide-icon {
+    font-size: 48px;
+    line-height: 1;
+  }
+
+  .slide-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.2;
+  }
+
+  .slide-subtitle {
+    font-size: 15px;
+    color: #94a3b8;
+    margin-top: 6px;
+  }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .feature-card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 18px;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-3px);
+    border-color: #60a5fa;
+  }
+
+  .feature-card-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .feature-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .feature-card-desc {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 6px;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-new { background: #059669; color: white; }
+  .badge-updated { background: #d97706; color: white; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+  }
+
+  .stat-card {
+    text-align: center;
+    padding: 20px 12px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid #334155;
+    border-radius: 12px;
+  }
+
+  .stat-value {
+    font-size: 36px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #60a5fa, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  ul.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0;
+  }
+
+  ul.feature-list li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  ul.feature-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    color: #10b981;
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  ul.feature-list li strong { color: #f1f5f9; }
+
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .role-card {
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid;
+  }
+
+  .role-card.admin { background: rgba(239, 68, 68, 0.1); border-color: #dc2626; }
+  .role-card.helpdesk { background: rgba(234, 179, 8, 0.1); border-color: #ca8a04; }
+  .role-card.viewer { background: rgba(59, 130, 246, 0.1); border-color: #2563eb; }
+
+  .role-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  .role-title.admin { color: #f87171; }
+  .role-title.helpdesk { color: #fbbf24; }
+  .role-title.viewer { color: #60a5fa; }
+
+  .role-perms {
+    font-size: 13px;
+    color: #cbd5e1;
+    line-height: 1.9;
+  }
+
+  .role-perms .check { color: #10b981; font-weight: bold; margin-right: 4px; }
+  .role-perms .cross { color: #ef4444; font-weight: bold; margin-right: 4px; }
+
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .tech-card {
+    text-align: center;
+    padding: 18px 10px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid #334155;
+    border-radius: 10px;
+  }
+
+  .tech-emoji {
+    font-size: 32px;
+    margin-bottom: 6px;
+  }
+
+  .tech-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+
+  .tech-desc {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 3px;
+  }
+
+  .navigation {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+    background: rgba(15, 23, 42, 0.85);
+    padding: 8px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    border: 1px solid #334155;
+  }
+
+  .nav-btn {
+    padding: 10px 20px;
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid #475569;
+    color: #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .nav-btn:hover:not(:disabled) {
+    background: #2563eb;
+    border-color: #2563eb;
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .top-bar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    margin: -20px -20px 20px -20px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #334155;
+    z-index: 50;
+  }
+
+  .slide-counter {
+    padding: 6px 14px;
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid #475569;
+    color: #cbd5e1;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .version-tag {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #059669, #0891b2);
+    color: white;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #a855f7);
+    transition: width 0.4s ease;
+    z-index: 200;
+    width: 0;
+  }
+
+  .title-slide {
+    text-align: center;
+    padding: 40px 30px;
+  }
+
+  .title-slide h1 {
+    font-size: 60px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #60a5fa, #a855f7, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+
+  .title-slide h2 {
+    font-size: 20px;
+    color: #94a3b8;
+    font-weight: 400;
+    margin-bottom: 30px;
+  }
+
+  .title-slide .highlight {
+    display: inline-block;
+    font-size: 15px;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 10px 20px;
+    border-radius: 25px;
+    margin-top: 16px;
+  }
+
+  .laps-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    color: white;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 16px;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+  }
+
+  .code-block {
+    background: #0a0e1a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    color: #cbd5e1;
+    margin: 12px 0;
+    overflow-x: auto;
+    line-height: 1.7;
+  }
+
+  .code-block .comment { color: #64748b; }
+  .code-block .keyword { color: #c084fc; }
+  .code-block .string { color: #86efac; }
+
+  .two-column {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 16px;
+  }
+
+  .info-box {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 4px solid #3b82f6;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 14px 0;
+  }
+
+  .info-box.warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-left-color: #f59e0b;
+  }
+
+  .info-box.success {
+    background: rgba(16, 185, 129, 0.1);
+    border-left-color: #10b981;
+  }
+
+  .info-box-title {
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+
+  .info-box-content {
+    font-size: 13px;
+    color: #cbd5e1;
+    line-height: 1.6;
+  }
+
+  .flow-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 24px 0;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .flow-node {
+    background: rgba(30, 41, 59, 0.8);
+    border: 2px solid #475569;
+    border-radius: 12px;
+    padding: 14px 18px;
+    text-align: center;
+    min-width: 130px;
+  }
+
+  .flow-node-icon {
+    font-size: 28px;
+    margin-bottom: 6px;
+  }
+
+  .flow-node-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e2e8f0;
+    line-height: 1.4;
+  }
+
+  .flow-arrow {
+    font-size: 22px;
+    color: #60a5fa;
+    font-weight: bold;
+  }
+
+  h3.section-title {
+    color: #f1f5f9;
+    font-size: 18px;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  h3.subsection {
+    color: #94a3b8;
+    font-size: 13px;
+    text-transform: uppercase;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  /* Ensure text is always readable */
+  p, li, div { line-height: 1.6; }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    body { padding: 10px 10px 90px 10px; }
+    .slide { padding: 24px 20px; }
+    .slide-title { font-size: 24px; }
+    .title-slide h1 { font-size: 40px; }
+    .title-slide h2 { font-size: 16px; }
+    .navigation { flex-wrap: wrap; justify-content: center; }
+    .nav-btn { padding: 8px 14px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="slideshow" id="slideshow">
+
+<div class="top-bar">
+  <div class="version-tag">v2.4.0</div>
+  <div class="slide-counter">Slide <span id="slideNum">1</span> of <span id="slideTotal">18</span></div>
+</div>
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide active title-slide">
+  <h1>AD Manager Pro</h1>
+  <h2>Enterprise Active Directory Management Platform</h2>
+  <div class="stat-grid" style="max-width: 700px; margin: 30px auto;">
+    <div class="stat-card">
+      <div class="stat-value">14</div>
+      <div class="stat-label">Frontend Pages</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">88+</div>
+      <div class="stat-label">API Endpoints</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">7</div>
+      <div class="stat-label">DB Tables</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">3</div>
+      <div class="stat-label">User Roles</div>
+    </div>
+  </div>
+  <div class="laps-badge">🔑 NEW in v2.4.0: Windows LAPS Integration</div>
+  <br>
+  <div class="highlight">Web-Based • Role-Based • Fully Audited</div>
+</div>
+
+<!-- SLIDE 2: WHAT IS IT -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">💡</div>
+    <div>
+      <div class="slide-title">What is AD Manager Pro?</div>
+      <div class="slide-subtitle">Modern web platform replacing legacy AD tools</div>
+    </div>
+  </div>
+  <ul class="feature-list">
+    <li><strong>Web-based interface</strong> - No client installation, access from any browser on any device</li>
+    <li><strong>Dark-themed modern UI</strong> - Built with React 18 and Tailwind CSS for a professional experience</li>
+    <li><strong>Direct AD integration</strong> - Native LDAP/LDAPS via ldap3 library, no external tool dependencies</li>
+    <li><strong>Windows LAPS support</strong> - View and rotate local admin passwords with full audit trail</li>
+    <li><strong>Role-based access</strong> - Admin, Helpdesk, and Viewer roles with granular permissions</li>
+    <li><strong>Complete audit trail</strong> - Every action logged with operator, IP, timestamp, and details</li>
+    <li><strong>Single-port deployment</strong> - Backend serves frontend as static files on port 8080</li>
+    <li><strong>Zero-configuration database</strong> - SQLite requires no separate DB server</li>
+    <li><strong>Automated installer</strong> - PowerShell script handles complete setup in minutes</li>
+  </ul>
+</div>
+
+<!-- SLIDE 3: TECH STACK -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">⚙️</div>
+    <div>
+      <div class="slide-title">Technology Stack</div>
+      <div class="slide-subtitle">Modern, maintainable, production-ready</div>
+    </div>
+  </div>
+  <h3 class="subsection">Backend Stack</h3>
+  <div class="tech-grid">
+    <div class="tech-card"><div class="tech-emoji">🐍</div><div class="tech-name">Python 3.11+</div><div class="tech-desc">Core runtime</div></div>
+    <div class="tech-card"><div class="tech-emoji">⚡</div><div class="tech-name">FastAPI</div><div class="tech-desc">Web framework</div></div>
+    <div class="tech-card"><div class="tech-emoji">🦄</div><div class="tech-name">Uvicorn</div><div class="tech-desc">ASGI server</div></div>
+    <div class="tech-card"><div class="tech-emoji">🔌</div><div class="tech-name">ldap3</div><div class="tech-desc">LDAP client</div></div>
+    <div class="tech-card"><div class="tech-emoji">💾</div><div class="tech-name">SQLite</div><div class="tech-desc">Database</div></div>
+    <div class="tech-card"><div class="tech-emoji">🔐</div><div class="tech-name">JWT</div><div class="tech-desc">Auth tokens</div></div>
+  </div>
+  <h3 class="subsection">Frontend Stack</h3>
+  <div class="tech-grid">
+    <div class="tech-card"><div class="tech-emoji">⚛️</div><div class="tech-name">React 18</div><div class="tech-desc">UI framework</div></div>
+    <div class="tech-card"><div class="tech-emoji">⚡</div><div class="tech-name">Vite</div><div class="tech-desc">Build tool</div></div>
+    <div class="tech-card"><div class="tech-emoji">🎨</div><div class="tech-name">Tailwind CSS</div><div class="tech-desc">Styling</div></div>
+    <div class="tech-card"><div class="tech-emoji">📊</div><div class="tech-name">Recharts</div><div class="tech-desc">Charts</div></div>
+    <div class="tech-card"><div class="tech-emoji">🌐</div><div class="tech-name">Axios</div><div class="tech-desc">HTTP client</div></div>
+    <div class="tech-card"><div class="tech-emoji">🎭</div><div class="tech-name">Lucide</div><div class="tech-desc">Icons</div></div>
+  </div>
+</div>
+
+<!-- SLIDE 4: USER MANAGEMENT -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">👥</div>
+    <div>
+      <div class="slide-title">User Management</div>
+      <div class="slide-subtitle">Complete lifecycle management for AD users</div>
+    </div>
+  </div>
+  <div class="content-grid">
+    <div class="feature-card">
+      <span class="feature-card-icon">➕</span>
+      <div class="feature-card-title">Create Users</div>
+      <div class="feature-card-desc">Two-step LDAP creation with password generator, OU selection, home folder path with %username% placeholder, and drive letter mapping.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">✏️</span>
+      <div class="feature-card-title">Edit & Update</div>
+      <div class="feature-card-desc">Modal organized in 5 sections: Personal, Job Info, Home Folder, Additional, Account Options with all standard AD attributes.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🔒</span>
+      <div class="feature-card-title">Enable/Disable/Unlock</div>
+      <div class="feature-card-desc">Accurate lockout detection using domain lockoutDuration policy, cached hourly for performance.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🔑</span>
+      <div class="feature-card-title">Password Reset</div>
+      <div class="feature-card-desc">Show/hide toggle, 16-char password generator, force change checkbox, and unlock option for locked accounts.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📥</span>
+      <div class="feature-card-title">Bulk Import CSV</div>
+      <div class="feature-card-desc">Upload or paste CSV, template download, preview first 10 rows, per-user success/fail results with error details.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🔄</span>
+      <div class="feature-card-title">Bulk Update CSV</div>
+      <div class="feature-card-desc">Case-insensitive columns with aliases (jobtitle→title), empty cells skipped, per-user updates in one operation.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: WINDOWS LAPS HIGHLIGHT -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">🔑</div>
+    <div>
+      <div class="slide-title">Windows LAPS Integration<span class="badge badge-new">NEW v2.4.0</span></div>
+      <div class="slide-subtitle">Secure local admin password recovery with audit compliance</div>
+    </div>
+  </div>
+  <div class="info-box success">
+    <div class="info-box-title">🎯 What is LAPS?</div>
+    <div class="info-box-content">Windows Local Administrator Password Solution automatically rotates local admin passwords and stores them encrypted in Active Directory. AD Manager Pro provides a secure web interface to view these passwords with mandatory reason logging.</div>
+  </div>
+  <div class="content-grid">
+    <div class="feature-card">
+      <span class="feature-card-icon">🔓</span>
+      <div class="feature-card-title">View LAPS Passwords</div>
+      <div class="feature-card-desc">Gold key icon on each computer row (Admin only). Click to open 3-step secure modal.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📝</span>
+      <div class="feature-card-title">Mandatory Reason</div>
+      <div class="feature-card-desc">Minimum 5 characters required. Reason permanently logged with operator name and IP.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">⏱️</span>
+      <div class="feature-card-title">Auto-Hide 30s</div>
+      <div class="feature-card-desc">Password disappears from screen after countdown timer. Prevents shoulder-surfing.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📜</span>
+      <div class="feature-card-title">Password History</div>
+      <div class="feature-card-desc">View last 5 previous passwords for accessing rebuilt or recovered systems.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🔄</span>
+      <div class="feature-card-title">Force Rotation</div>
+      <div class="feature-card-desc">Trigger immediate password rotation. New password on next check-in (~1 hour).</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🔐</span>
+      <div class="feature-card-title">Encryption Support</div>
+      <div class="feature-card-desc">Uses PowerShell subprocess for encrypted LAPS passwords (Windows LAPS 2023+).</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: LAPS WORKFLOW -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">🔑</div>
+    <div>
+      <div class="slide-title">LAPS Password Retrieval Flow</div>
+      <div class="slide-subtitle">Three-step secure workflow with audit trail</div>
+    </div>
+  </div>
+  <div class="flow-diagram">
+    <div class="flow-node">
+      <div class="flow-node-icon">👤</div>
+      <div class="flow-node-label">Admin clicks<br>🔑 Key Icon</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="flow-node-icon">📝</div>
+      <div class="flow-node-label">Enter Reason<br>(min 5 chars)</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="flow-node-icon">🔓</div>
+      <div class="flow-node-label">View Password<br>Auto-Hide 30s</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="flow-node-icon">📋</div>
+      <div class="flow-node-label">Copy / History<br>/ Rotate</div>
+    </div>
+  </div>
+
+  <h3 class="section-title">🔒 Security Layers</h3>
+  <ul class="feature-list">
+    <li><strong>Admin role required</strong> - Enforced on both backend (Depends(require_admin)) and frontend</li>
+    <li><strong>Reason validation</strong> - Minimum 5 characters required, max 200, checked both sides</li>
+    <li><strong>Every view audited</strong> - Success or failure, includes operator, IP, timestamp, reason</li>
+    <li><strong>Password not in listing</strong> - Only per-computer fetch endpoint returns password</li>
+    <li><strong>Injection safe</strong> - Computer name sanitized to alphanumeric plus hyphens only</li>
+    <li><strong>No caching</strong> - Fresh fetch every time, no browser or server cache</li>
+    <li><strong>No bulk export</strong> - One password at a time, intentionally limited</li>
+  </ul>
+</div>
+
+<!-- SLIDE 7: GROUP MANAGEMENT -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">👨‍👩‍👧‍👦</div>
+    <div>
+      <div class="slide-title">Group Management</div>
+      <div class="slide-subtitle">Security and distribution groups with membership control</div>
+    </div>
+  </div>
+  <div class="content-grid">
+    <div class="feature-card">
+      <span class="feature-card-icon">📇</span>
+      <div class="feature-card-title">Grid Card View</div>
+      <div class="feature-card-desc">Responsive cards with group name, description, type badge (security/distribution), member count, and scope.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">➕</span>
+      <div class="feature-card-title">Create Groups</div>
+      <div class="feature-card-desc">Full creation with type (security/distribution) and scope (global/domain-local/universal) selection.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">👥</span>
+      <div class="feature-card-title">Manage Members</div>
+      <div class="feature-card-desc">View detail modal with stats. Add members by searching AD users. Remove with one click.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🛡️</span>
+      <div class="feature-card-title">Built-in Protection</div>
+      <div class="feature-card-desc">35+ built-in Windows groups (Domain Admins, etc.) protected from deletion.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: COMPUTER MANAGEMENT -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">🖥️</div>
+    <div>
+      <div class="slide-title">Computer Management<span class="badge badge-updated">UPDATED</span></div>
+      <div class="slide-subtitle">Full lifecycle including LAPS integration</div>
+    </div>
+  </div>
+  <div class="content-grid">
+    <div class="feature-card">
+      <span class="feature-card-icon">🔑</span>
+      <div class="feature-card-title">LAPS Key Icon</div>
+      <div class="feature-card-desc"><strong style="color: #f59e0b;">NEW:</strong> Gold key icon on each row (Admin only) opens LAPS password modal.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">➕</span>
+      <div class="feature-card-title">Create Accounts</div>
+      <div class="feature-card-desc">Pre-stage computers with validation (15 char max, alphanumeric plus hyphens).</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📁</span>
+      <div class="feature-card-title">Move Between OUs</div>
+      <div class="feature-card-desc"><strong style="color: #10b981;">FIXED:</strong> Now with target OU validation and detailed error reporting.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🔴</span>
+      <div class="feature-card-title">Status Detection</div>
+      <div class="feature-card-desc">Active (green), Inactive 90+ days (yellow), Disabled (red) based on last logon and UAC.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📊</span>
+      <div class="feature-card-title">Bulk Operations</div>
+      <div class="feature-card-desc">Multi-select enable/disable/move/delete with progress bar and per-item results.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📤</span>
+      <div class="feature-card-title">CSV Export</div>
+      <div class="feature-card-desc">Export filtered list to CSV with all columns including OS, DNS name, last logon.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: OU MANAGEMENT -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">📂</div>
+    <div>
+      <div class="slide-title">Organizational Units</div>
+      <div class="slide-subtitle">Browse, create, and manage OU structure</div>
+    </div>
+  </div>
+  <div class="content-grid">
+    <div class="feature-card">
+      <span class="feature-card-icon">🌳</span>
+      <div class="feature-card-title">Tree Browser</div>
+      <div class="feature-card-desc">Searchable list of all OUs with folder icons, hierarchy, and full DN display.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">➕</span>
+      <div class="feature-card-title">Create OUs</div>
+      <div class="feature-card-desc">Parent picker with live DN preview. Description support.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📊</span>
+      <div class="feature-card-title">Content Browser</div>
+      <div class="feature-card-desc">Click any OU to see 4 stat cards (Users, Groups, Computers, Sub-OUs) and tabbed content.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🗑️</span>
+      <div class="feature-card-title">Safe Delete</div>
+      <div class="feature-card-desc">Delete empty OUs only (Admin). Warning if OU contains objects.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: SERVICE ACCOUNTS -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">🤖</div>
+    <div>
+      <div class="slide-title">Service Account Management</div>
+      <div class="slide-subtitle">Atomic dual tracking in AD and database</div>
+    </div>
+  </div>
+  <ul class="feature-list">
+    <li><strong>Atomic creation</strong> - Creates in AD and database simultaneously with rollback if either fails</li>
+    <li><strong>Documentation fields</strong> - Purpose, owner, department, notes, system-critical flag</li>
+    <li><strong>App access toggle</strong> - Grant AD Manager Pro access with role selection in one step</li>
+    <li><strong>Import existing</strong> - Convert existing AD users into tracked service accounts</li>
+    <li><strong>Password management</strong> - Reset with 12+ char requirement, no force change</li>
+    <li><strong>Color-coded cards</strong> - Red for system-critical, purple for app-access, indigo for regular</li>
+    <li><strong>Protection</strong> - System-critical service accounts protected from deletion</li>
+    <li><strong>Filter stats</strong> - Cards for Total, System Critical, App Access, Regular</li>
+  </ul>
+</div>
+
+<!-- SLIDE 11: TEMPLATES & WORKFLOWS -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">📋</div>
+    <div>
+      <div class="slide-title">Templates & Workflows</div>
+      <div class="slide-subtitle">Standardized creation and approval processes</div>
+    </div>
+  </div>
+  <div class="two-column">
+    <div>
+      <h3 style="color: #60a5fa; margin-bottom: 12px; font-size: 18px;">📋 User Templates</h3>
+      <ul class="feature-list">
+        <li>Define OU, department, title, company, office</li>
+        <li>Auto-assign to multiple groups on creation</li>
+        <li>Password policy per template</li>
+        <li>Create user needs only name/email/password</li>
+        <li>Template values auto-fill all fields</li>
+        <li>Grid cards with policy badges</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color: #a855f7; margin-bottom: 12px; font-size: 18px;">✅ Approval Workflows</h3>
+      <ul class="feature-list">
+        <li>6 request types with emoji icons</li>
+        <li>Modify, Create, Delete User</li>
+        <li>Reset Password, Enable, Disable</li>
+        <li>Reason required for each request</li>
+        <li>Admin approves executes immediately</li>
+        <li>Pending count badge in sidebar (30s refresh)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12: PHOTOS & GPO -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">🖼️</div>
+    <div>
+      <div class="slide-title">User Photos & GPO Reporting</div>
+      <div class="slide-subtitle">Visual management and policy visibility</div>
+    </div>
+  </div>
+  <div class="two-column">
+    <div>
+      <h3 style="color: #ec4899; margin-bottom: 12px; font-size: 18px;">📸 User Photos</h3>
+      <ul class="feature-list">
+        <li>Auto Canvas processing to 200×200 JPEG</li>
+        <li>Progressive quality reduction under 95KB</li>
+        <li>Center-crop to square automatically</li>
+        <li>Photos appear in Outlook, Teams, SharePoint</li>
+        <li>Bulk upload with preview</li>
+        <li>Filter with/without photo</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color: #f59e0b; margin-bottom: 12px; font-size: 18px;">📜 GPO Reporting</h3>
+      <ul class="feature-list">
+        <li>Grid view of all Group Policy Objects</li>
+        <li>Status badges (Enabled/Disabled/Partial)</li>
+        <li>User/Computer settings indicators</li>
+        <li>OU link report with enforcement flags</li>
+        <li>SYSVOL path and version display</li>
+        <li>Read-only, no editing capability</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 13: REPORTS & DASHBOARD -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">📊</div>
+    <div>
+      <div class="slide-title">Reports & Analytics<span class="badge badge-updated">UPDATED</span></div>
+      <div class="slide-subtitle">ManageEngine-style dashboard with drill-down modals</div>
+    </div>
+  </div>
+  <div class="content-grid">
+    <div class="feature-card">
+      <span class="feature-card-icon">📈</span>
+      <div class="feature-card-title">Quick Stat Cards</div>
+      <div class="feature-card-desc"><strong style="color: #10b981;">FIXED:</strong> Locked, Password-Never-Expires, Must-Change, Inactive cards now open filtered user list modal.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🕐</span>
+      <div class="feature-card-title">Login Activity</div>
+      <div class="feature-card-desc">6 clickable cards: 15min, 1hr, 24hr, 7d, 30d, Never - each opens active users modal.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📊</span>
+      <div class="feature-card-title">Interactive Charts</div>
+      <div class="feature-card-desc">Bar and pie charts for user stats, system stats, departments, OS distribution using Recharts.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📤</span>
+      <div class="feature-card-title">Quick CSV Export</div>
+      <div class="feature-card-desc">8 one-click exports: all users, active, disabled, locked, never-logged-in, inactive 90+, groups, computers.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 14: SECURITY & AUDIT -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">🛡️</div>
+    <div>
+      <div class="slide-title">Security & Audit Compliance</div>
+      <div class="slide-subtitle">Complete accountability for every action</div>
+    </div>
+  </div>
+  <ul class="feature-list">
+    <li><strong>JWT authentication</strong> against AD via LDAP bind, 8-hour token expiry</li>
+    <li><strong>Every action logged</strong> - operator, role, action, target, details, status, IP, timestamp</li>
+    <li><strong>LAPS audit special</strong> - includes mandatory reason field in details for each password view</li>
+    <li><strong>Fernet AES encryption</strong> for stored service account and SMTP passwords</li>
+    <li><strong>Active session tracking</strong> - see who's logged in with device detection and force-logout</li>
+    <li><strong>CSV export</strong> of audit logs with date-stamped filename</li>
+    <li><strong>500 entries per page</strong> pagination with total count display</li>
+    <li><strong>Login attempts logged</strong> - both success and failure with IP addresses</li>
+    <li><strong>Login requires dual auth</strong> - AD credentials AND app_users authorization</li>
+  </ul>
+</div>
+
+<!-- SLIDE 15: RBAC ROLES -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">👑</div>
+    <div>
+      <div class="slide-title">Role-Based Access Control</div>
+      <div class="slide-subtitle">Three roles with granular permissions</div>
+    </div>
+  </div>
+  <div class="role-grid">
+    <div class="role-card admin">
+      <div class="role-title admin">🔴 Admin</div>
+      <div class="role-perms">
+        <span class="check">✓</span>Full access to all features<br>
+        <span class="check">✓</span>Delete any object<br>
+        <span class="check">✓</span>Manage settings<br>
+        <span class="check">✓</span>Approve workflows<br>
+        <span class="check">✓</span>View LAPS passwords<br>
+        <span class="check">✓</span>Force LAPS rotation<br>
+        <span class="check">✓</span>Manage app users<br>
+        <span class="check">✓</span>View active sessions<br>
+        <span class="check">✓</span>Change service password
+      </div>
+    </div>
+    <div class="role-card helpdesk">
+      <div class="role-title helpdesk">🟡 Helpdesk</div>
+      <div class="role-perms">
+        <span class="check">✓</span>Create/edit users<br>
+        <span class="check">✓</span>Reset passwords<br>
+        <span class="check">✓</span>Manage groups<br>
+        <span class="check">✓</span>Enable/disable computers<br>
+        <span class="check">✓</span>Use templates<br>
+        <span class="check">✓</span>Submit workflows<br>
+        <span class="cross">✗</span>Delete objects<br>
+        <span class="cross">✗</span>View LAPS passwords<br>
+        <span class="cross">✗</span>Manage settings
+      </div>
+    </div>
+    <div class="role-card viewer">
+      <div class="role-title viewer">🔵 Viewer</div>
+      <div class="role-perms">
+        <span class="check">✓</span>View all data<br>
+        <span class="check">✓</span>View reports<br>
+        <span class="check">✓</span>Export CSVs<br>
+        <span class="check">✓</span>View audit logs<br>
+        <span class="check">✓</span>Submit workflows<br>
+        <span class="cross">✗</span>Create/modify/delete<br>
+        <span class="cross">✗</span>Reset passwords<br>
+        <span class="cross">✗</span>View LAPS<br>
+        <span class="cross">✗</span>Manage anything
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 16: DEPLOYMENT -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">🚀</div>
+    <div>
+      <div class="slide-title">Deployment & Setup</div>
+      <div class="slide-subtitle">One-command automated installation</div>
+    </div>
+  </div>
+  <div class="info-box success">
+    <div class="info-box-title">✨ Automated Installer</div>
+    <div class="info-box-content">The install.ps1 script handles everything: installs Python and Node.js if missing, configures AD, builds frontend, creates Windows scheduled task, opens firewall port, and starts the service. No manual steps required.</div>
+  </div>
+  <div class="code-block">
+    <span class="comment"># 1. Setup AD permissions on Domain Controller</span><br>
+    powershell -ExecutionPolicy Bypass -File setup_permissions.ps1<br><br>
+    <span class="comment"># 2. Install AD Manager Pro on server</span><br>
+    powershell -ExecutionPolicy Bypass -File install.ps1<br><br>
+    <span class="comment"># 3. (Optional) Enable LAPS integration</span><br>
+    Add-ADGroupMember -Identity <span class="string">"IT Admins"</span> -Members <span class="string">"SERVER$"</span><br>
+    Restart-Computer -Force<br><br>
+    <span class="comment"># 4. Access via browser</span><br>
+    http://servername:8080
+  </div>
+  <ul class="feature-list">
+    <li>Runs on Windows 10/11 or Windows Server 2016+</li>
+    <li>Single port (8080) - no SSL certificate management</li>
+    <li>Auto-start via Windows Task Scheduler as SYSTEM</li>
+    <li>Zero-configuration SQLite database</li>
+    <li>Health check verification post-install</li>
+  </ul>
+</div>
+
+<!-- SLIDE 17: WHAT'S NEW -->
+<div class="slide">
+  <div class="slide-header">
+    <div class="slide-icon">🎉</div>
+    <div>
+      <div class="slide-title">What's New in v2.4.0</div>
+      <div class="slide-subtitle">Windows LAPS + Critical Fixes</div>
+    </div>
+  </div>
+  <div class="content-grid">
+    <div class="feature-card">
+      <span class="feature-card-icon">🔑</span>
+      <div class="feature-card-title">Windows LAPS<span class="badge badge-new">NEW</span></div>
+      <div class="feature-card-desc">Full LAPS support with view, history, rotation, encryption support via PowerShell, 30s auto-hide, mandatory reason logging.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🔧</span>
+      <div class="feature-card-title">Computer Move<span class="badge badge-updated">FIX</span></div>
+      <div class="feature-card-desc">Target OU validation, detailed error reporting, cross-OU permissions in setup_permissions.ps1.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📊</span>
+      <div class="feature-card-title">Reports Cards<span class="badge badge-updated">FIX</span></div>
+      <div class="feature-card-desc">"View Details" and "Options" links on stat cards now open filtered UserListModal instead of dead links.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🛡️</span>
+      <div class="feature-card-title">Permissions Script<span class="badge badge-updated">v2.3.0</span></div>
+      <div class="feature-card-desc">Cross-OU move permissions, WP;;computer for moves, proper /I:S flag usage.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">📚</span>
+      <div class="feature-card-title">Documentation</div>
+      <div class="feature-card-desc">Complete v2.4.0 docs with LAPS setup guide, troubleshooting, security model.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-card-icon">🔄</span>
+      <div class="feature-card-title">API Growth</div>
+      <div class="feature-card-desc">88+ endpoints (was 85+). 3 new LAPS endpoints. 4 new ADService methods.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 18: THANK YOU -->
+<div class="slide title-slide">
+  <div class="slide-icon" style="font-size: 80px;">🎉</div>
+  <h1>Ready to Deploy</h1>
+  <h2>AD Manager Pro v2.4.0 - Enterprise Ready</h2>
+  <div class="stat-grid" style="max-width: 800px; margin: 30px auto;">
+    <div class="stat-card">
+      <div class="stat-value">3</div>
+      <div class="stat-label">Backend Files</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">2050</div>
+      <div class="stat-label">Lines of Code</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">88+</div>
+      <div class="stat-label">API Endpoints</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">14</div>
+      <div class="stat-label">React Pages</div>
+    </div>
+  </div>
+  <div class="laps-badge">🔑 Windows LAPS Ready</div>
+  <br><br>
+  <div class="highlight">Full documentation available in documentation.md</div>
+  <p style="margin-top: 30px; color: #64748b; font-size: 13px;">
+    Use ← → arrow keys to navigate • Press F for fullscreen • Press Home to restart
+  </p>
+</div>
+
+</div>
+
+<div class="navigation">
+  <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">← Previous</button>
+  <button class="nav-btn" onclick="goToSlide(0)">🏠 First</button>
+  <button class="nav-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+  <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">Next →</button>
+</div>
+
+<script>
+  let currentSlide = 0;
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+
+  document.getElementById('slideTotal').textContent = totalSlides;
+
+  function updateSlide() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === currentSlide));
+    document.getElementById('slideNum').textContent = currentSlide + 1;
+    document.getElementById('progressBar').style.width = ((currentSlide + 1) / totalSlides * 100) + '%';
+    document.getElementById('prevBtn').disabled = currentSlide === 0;
+    document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+    // Scroll to top of new slide
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function changeSlide(direction) {
+    const newSlide = currentSlide + direction;
+    if (newSlide >= 0 && newSlide < totalSlides) {
+      currentSlide = newSlide;
+      updateSlide();
+    }
+  }
+
+  function goToSlide(index) {
+    if (index >= 0 && index < totalSlides) {
+      currentSlide = index;
+      updateSlide();
+    }
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log('Fullscreen error:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    // Don't interfere with typing in inputs
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+      e.preventDefault();
+      changeSlide(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      changeSlide(-1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goToSlide(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goToSlide(totalSlides - 1);
+    } else if (e.key === 'f' || e.key === 'F') {
+      toggleFullscreen();
+    } else if (e.key === 'Escape') {
+      if (document.fullscreenElement) document.exitFullscreen();
+    }
+  });
+
+  // Initialize
+  updateSlide();
+</script>
+
+</body>
+</html>

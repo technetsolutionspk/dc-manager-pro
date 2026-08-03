@@ -1,0 +1,296 @@
+"""
+DC Manager Pro - DHCP Service (v2.6.0)
+======================================
+Handles DHCP scope, reservation, and lease management via PowerShell remoting.
+Uses per-domain DHCP server IP from domain_profiles table.
+Auto-failover: tries primary DHCP server first, falls back to secondary.
+"""
+
+import json
+import logging
+import subprocess
+from typing import Optional, List, Dict, Any, Tuple
+
+from models import DomainProfile, get_domain_password
+
+logger = logging.getLogger(__name__)
+
+POWERSHELL_TIMEOUT = 60
+
+
+class DHCPService:
+    """
+    DHCP Management Service.
+    Executes PowerShell cmdlets remotely on the DHCP server for a specific domain.
+    Supports reservations (full CRUD) and leases (view + release + delete).
+    """
+
+    def __init__(self, domain_profile: DomainProfile):
+        self.domain = domain_profile
+        self.primary_server = (domain_profile.dhcp_server_primary or "").strip()
+        self.secondary_server = (domain_profile.dhcp_server_secondary or "").strip()
+        self.service_account = domain_profile.ad_service_account
+        self.service_password = get_domain_password(domain_profile)
+        self.active_server = None
+
+    # ── Core PowerShell execution ──────────────────────────
+    def _run_ps(self, script: str) -> Tuple[bool, str, str]:
+        """Execute PowerShell with automatic failover."""
+        if self.primary_server:
+            success, stdout, stderr = self._invoke_on_server(self.primary_server, script)
+            if success:
+                self.active_server = self.primary_server
+                return True, stdout, stderr
+            logger.warning(f"DHCP primary {self.primary_server} failed: {stderr[:200]}")
+
+        if self.secondary_server:
+            success, stdout, stderr = self._invoke_on_server(self.secondary_server, script)
+            if success:
+                self.active_server = self.secondary_server
+                logger.info(f"DHCP failed over to secondary {self.secondary_server}")
+                return True, stdout, stderr
+            logger.error(f"DHCP secondary {self.secondary_server} also failed: {stderr[:200]}")
+
+        return False, "", "No DHCP server available"
+
+    def _invoke_on_server(self, server: str, script: str) -> Tuple[bool, str, str]:
+        try:
+            escaped_password = self.service_password.replace("'", "''")
+            escaped_account = self.service_account.replace("'", "''")
+
+            wrapper = f"""
+$pw = ConvertTo-SecureString '{escaped_password}' -AsPlainText -Force
+$cred = New-Object PSCredential('{escaped_account}', $pw)
+$ErrorActionPreference = 'Stop'
+try {{
+    $result = Invoke-Command -ComputerName '{server}' -Credential $cred -ScriptBlock {{
+        {script}
+    }} -ErrorAction Stop
+    $result | ConvertTo-Json -Depth 4 -Compress
+}} catch {{
+    Write-Error $_.Exception.Message
+    exit 1
+}}
+"""
+            result = subprocess.run(
+                ["powershell", "-NoProfile", "-NonInteractive", "-Command", wrapper],
+                capture_output=True,
+                text=True,
+                timeout=POWERSHELL_TIMEOUT
+            )
+
+            if result.returncode != 0:
+                return False, result.stdout or "", result.stderr or ""
+
+            return True, result.stdout or "", ""
+
+        except subprocess.TimeoutExpired:
+            return False, "", f"Timeout after {POWERSHELL_TIMEOUT}s"
+        except Exception as e:
+            return False, "", str(e)
+
+    # ── Scopes ──────────────────────────────────────────────
+    def get_scopes(self) -> Tuple[bool, List[Dict], str]:
+        """List all DHCPv4 scopes."""
+        script = """
+Get-DhcpServerv4Scope | ForEach-Object {
+    $s = $_
+    $stats = $null
+    try { $stats = Get-DhcpServerv4ScopeStatistics -ScopeId $s.ScopeId -ErrorAction SilentlyContinue } catch {}
+    [PSCustomObject]@{
+        ScopeId     = $s.ScopeId.IPAddressToString
+        Name        = $s.Name
+        State       = $s.State.ToString()
+        StartRange  = $s.StartRange.IPAddressToString
+        EndRange    = $s.EndRange.IPAddressToString
+        SubnetMask  = $s.SubnetMask.IPAddressToString
+        LeaseDuration = $s.LeaseDuration.TotalHours
+        Description = $s.Description
+        AddressesFree = if ($stats) { $stats.Free } else { 0 }
+        AddressesInUse = if ($stats) { $stats.InUse } else { 0 }
+        PercentageInUse = if ($stats) { [math]::Round($stats.PercentageInUse, 1) } else { 0 }
+        Reserved = if ($stats) { $stats.Reserved } else { 0 }
+    }
+}
+"""
+        success, stdout, stderr = self._run_ps(script)
+        if not success:
+            return False, [], stderr
+
+        try:
+            data = json.loads(stdout) if stdout.strip() else []
+            if isinstance(data, dict):
+                data = [data]
+            scopes = []
+            for s in data:
+                scopes.append({
+                    "scopeId": s.get("ScopeId", ""),
+                    "name": s.get("Name", ""),
+                    "state": s.get("State", ""),
+                    "startRange": s.get("StartRange", ""),
+                    "endRange": s.get("EndRange", ""),
+                    "subnetMask": s.get("SubnetMask", ""),
+                    "leaseDurationHours": float(s.get("LeaseDuration", 0)),
+                    "description": s.get("Description", ""),
+                    "addressesFree": int(s.get("AddressesFree", 0)),
+                    "addressesInUse": int(s.get("AddressesInUse", 0)),
+                    "percentageInUse": float(s.get("PercentageInUse", 0)),
+                    "reserved": int(s.get("Reserved", 0)),
+                })
+            return True, scopes, f"Retrieved from {self.active_server}"
+        except json.JSONDecodeError as e:
+            return False, [], f"JSON parse error: {e}"
+
+    # ── Reservations ────────────────────────────────────────
+    def get_reservations(self, scope_id: str) -> Tuple[bool, List[Dict], str]:
+        """List reservations in a scope."""
+        script = f"""
+Get-DhcpServerv4Reservation -ScopeId '{scope_id}' | ForEach-Object {{
+    [PSCustomObject]@{{
+        IPAddress    = $_.IPAddress.IPAddressToString
+        ClientId     = $_.ClientId
+        Name         = $_.Name
+        Description  = $_.Description
+        Type         = $_.Type.ToString()
+        AddressState = $_.AddressState.ToString()
+    }}
+}}
+"""
+        success, stdout, stderr = self._run_ps(script)
+        if not success:
+            return False, [], stderr
+
+        try:
+            data = json.loads(stdout) if stdout.strip() else []
+            if isinstance(data, dict):
+                data = [data]
+            reservations = []
+            for r in data:
+                reservations.append({
+                    "ipAddress": r.get("IPAddress", ""),
+                    "clientId": r.get("ClientId", ""),
+                    "name": r.get("Name", ""),
+                    "description": r.get("Description", ""),
+                    "type": r.get("Type", ""),
+                    "addressState": r.get("AddressState", ""),
+                })
+            return True, reservations, f"Retrieved from {self.active_server}"
+        except json.JSONDecodeError as e:
+            return False, [], f"JSON parse error: {e}"
+
+    def create_reservation(self, scope_id: str, ip: str, mac: str,
+                          name: str = "", description: str = "") -> Tuple[bool, str]:
+        """Create a DHCP reservation. MAC can be in any format (dashes, colons, or plain)."""
+        # Normalize MAC to hex format for DHCP
+        mac_normalized = mac.replace(":", "").replace("-", "").replace(".", "").upper()
+        if len(mac_normalized) != 12:
+            return False, "Invalid MAC address format (must be 12 hex chars)"
+
+        name_param = f" -Name '{name}'" if name else ""
+        desc_param = f" -Description '{description}'" if description else ""
+
+        script = f"""
+Add-DhcpServerv4Reservation -ScopeId '{scope_id}' -IPAddress '{ip}' -ClientId '{mac_normalized}'{name_param}{desc_param}
+"""
+        success, stdout, stderr = self._run_ps(script)
+        if not success:
+            return False, stderr
+        return True, f"Reservation created: {ip} -> {mac_normalized}"
+
+    def update_reservation(self, scope_id: str, ip: str,
+                          name: Optional[str] = None,
+                          description: Optional[str] = None) -> Tuple[bool, str]:
+        """Update reservation name/description. Cannot change IP or MAC."""
+        params = []
+        if name is not None:
+            params.append(f"-Name '{name}'")
+        if description is not None:
+            params.append(f"-Description '{description}'")
+
+        if not params:
+            return False, "No fields to update"
+
+        script = f"""
+Set-DhcpServerv4Reservation -ScopeId '{scope_id}' -IPAddress '{ip}' {' '.join(params)}
+"""
+        success, stdout, stderr = self._run_ps(script)
+        if not success:
+            return False, stderr
+        return True, f"Reservation updated: {ip}"
+
+    def delete_reservation(self, scope_id: str, ip: str) -> Tuple[bool, str]:
+        script = f"""
+Remove-DhcpServerv4Reservation -ScopeId '{scope_id}' -IPAddress '{ip}'
+"""
+        success, stdout, stderr = self._run_ps(script)
+        if not success:
+            return False, stderr
+        return True, f"Reservation deleted: {ip}"
+
+    # ── Leases ──────────────────────────────────────────────
+    def get_leases(self, scope_id: str) -> Tuple[bool, List[Dict], str]:
+        """List active leases in a scope."""
+        script = f"""
+Get-DhcpServerv4Lease -ScopeId '{scope_id}' | ForEach-Object {{
+    [PSCustomObject]@{{
+        IPAddress    = $_.IPAddress.IPAddressToString
+        ClientId     = $_.ClientId
+        HostName     = $_.HostName
+        AddressState = $_.AddressState.ToString()
+        LeaseExpiryTime = if ($_.LeaseExpiryTime) {{ $_.LeaseExpiryTime.ToString('o') }} else {{ '' }}
+        Description  = $_.Description
+    }}
+}}
+"""
+        success, stdout, stderr = self._run_ps(script)
+        if not success:
+            return False, [], stderr
+
+        try:
+            data = json.loads(stdout) if stdout.strip() else []
+            if isinstance(data, dict):
+                data = [data]
+            leases = []
+            for l in data:
+                leases.append({
+                    "ipAddress": l.get("IPAddress", ""),
+                    "clientId": l.get("ClientId", ""),
+                    "hostName": l.get("HostName", ""),
+                    "addressState": l.get("AddressState", ""),
+                    "leaseExpiryTime": l.get("LeaseExpiryTime", ""),
+                    "description": l.get("Description", ""),
+                })
+            return True, leases, f"Retrieved from {self.active_server}"
+        except json.JSONDecodeError as e:
+            return False, [], f"JSON parse error: {e}"
+
+    def release_lease(self, scope_id: str, ip: str) -> Tuple[bool, str]:
+        """Release an active DHCP lease (equivalent to force renewal)."""
+        script = f"""
+Remove-DhcpServerv4Lease -ScopeId '{scope_id}' -IPAddress '{ip}'
+"""
+        success, stdout, stderr = self._run_ps(script)
+        if not success:
+            return False, stderr
+        return True, f"Lease released: {ip}"
+
+    def delete_lease(self, scope_id: str, ip: str) -> Tuple[bool, str]:
+        """Alias for release_lease - removes lease record entirely."""
+        return self.release_lease(scope_id, ip)
+
+    # ── Health check ────────────────────────────────────────
+    def test_connection(self) -> Tuple[bool, str]:
+        """Test if DHCP server is reachable."""
+        script = "Get-DhcpServerSetting | Select-Object -First 1"
+        success, stdout, stderr = self._run_ps(script)
+        if success:
+            return True, f"Connected to {self.active_server}"
+        return False, stderr
+
+
+# ═══════════════════════════════════════════════════════════
+# Factory
+# ═══════════════════════════════════════════════════════════
+def get_dhcp_service_for_domain(domain_profile: DomainProfile) -> DHCPService:
+    """Create DHCPService instance for the given domain profile."""
+    return DHCPService(domain_profile)

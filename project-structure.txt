@@ -1,0 +1,141 @@
+AD MANAGER PRO - PROJECT STRUCTURE
+Generated: 2026-07-06 21:07:46
+Root: C:\AD Pro\public
+============================================================
+
+|-- [.git] (excluded)
+|-- [.vite] (excluded)
+|-- [backend]
+|   |-- [__pycache__] (excluded)
+|   |-- [certs]
+|   |   |-- cert.crt (2.0KB)
+|   |   |-- cert.pem (2.0KB)
+|   |   \-- key.pem (3.2KB)
+|   |-- [database]
+|   |   \-- audit.db (256.0KB)
+|   |-- [logs]
+|   |   |-- app.log (3.3MB)
+|   |   |-- service.log (2.1MB)
+|   |   \-- startup.log
+|   |-- [static]
+|   |   |-- [assets]
+|   |   |   |-- index-BFBsoxPV.js (912.8KB)
+|   |   |   |-- index-BsnliYCH.js (902.0KB)
+|   |   |   |-- index-BUemjMMn.css (26.1KB)
+|   |   |   |-- index-BxJ8a2sy.css (27.4KB)
+|   |   |   |-- index-CeyRE0Qz.js (917.0KB)
+|   |   |   |-- index-CfFuiSNj.css (27.4KB)
+|   |   |   |-- index-CKr7EfHR.js (917.0KB)
+|   |   |   |-- index-CPSXeg6Y.js (903.8KB)
+|   |   |   |-- index-CTRO_-p-.js (891.5KB)
+|   |   |   |-- index-D5Ne5HWN.js (897.6KB)
+|   |   |   |-- index-Di_qYD96.css (27.6KB)
+|   |   |   |-- index-DJDx60k6.css (27.5KB)
+|   |   |   |-- index-DMM6cVMV.css (25.4KB)
+|   |   |   |-- index-LYAotNJn.css (26.2KB)
+|   |   |   \-- index-VV8mD-7S.js (902.0KB)
+|   |   |-- favicon.svg (9.3KB)
+|   |   |-- icons.svg (4.9KB)
+|   |   \-- index.html
+|   |-- [venv] (excluded)
+|   |-- .env
+|   |-- .env.example
+|   |-- ad_service.py (41.2KB)
+|   |-- add_user.py (1.9KB)
+|   |-- app.bak (36.5KB)
+|   |-- app.py (69.3KB)
+|   |-- app.py.backup (141.1KB)
+|   |-- generate_cert.py (2.7KB)
+|   |-- init_db.py (1.3KB)
+|   |-- models.py (19.2KB)
+|   |-- README.md (56.2KB)
+|   |-- requirements.txt (1.6KB)
+|   |-- service.cmd
+|   |-- setup.bat (5.7KB)
+|   |-- start_production.bat (1.3KB)
+|   |-- start.bat (2.5KB)
+|   |-- test_login.py (1.7KB)
+|   \-- test_search.py (2.5KB)
+|-- [frontend]
+|   |-- [dist] (excluded)
+|   |-- [node_modules] (excluded)
+|   |-- [public]
+|   |   |-- favicon.svg (9.3KB)
+|   |   \-- icons.svg (4.9KB)
+|   |-- [src]
+|   |   |-- [assets]
+|   |   |   |-- hero.png (12.8KB)
+|   |   |   |-- react.svg (4.0KB)
+|   |   |   \-- vite.svg (8.5KB)
+|   |   |-- [components]
+|   |   |   \-- Layout.jsx (7.9KB)
+|   |   |-- [pages]
+|   |   |   |-- AuditLogs.jsx (3.2KB)
+|   |   |   |-- Computers.jsx (26.9KB)
+|   |   |   |-- Dashboard.jsx (20.0KB)
+|   |   |   |-- GPO.jsx (22.5KB)
+|   |   |   |-- Groups.jsx (18.3KB)
+|   |   |   |-- Login.jsx (4.1KB)
+|   |   |   |-- OUs.jsx (17.4KB)
+|   |   |   |-- Photos.jsx (20.5KB)
+|   |   |   |-- Reports.jsx (29.8KB)
+|   |   |   |-- ServiceAccounts.jsx (45.9KB)
+|   |   |   |-- Sessions.jsx (22.9KB)
+|   |   |   |-- Settings.jsx (25.5KB)
+|   |   |   |-- Templates.jsx (27.9KB)
+|   |   |   |-- Users.jsx (66.4KB)
+|   |   |   \-- Workflows.jsx (30.1KB)
+|   |   |-- api.js (16.6KB)
+|   |   |-- App.css (2.8KB)
+|   |   |-- App.jsx (5.6KB)
+|   |   |-- index.css (1.5KB)
+|   |   \-- main.jsx
+|   |-- .env.local
+|   |-- .env.production
+|   |-- .gitignore
+|   |-- eslint.config.js
+|   |-- index.html
+|   |-- package-lock.json (138.5KB)
+|   |-- package.json
+|   |-- postcss.config.js
+|   |-- README.md (1.0KB)
+|   |-- tailwind.config.js
+|   \-- vite.config.js
+|-- .gitignore
+|-- backup.ps1 (14.2KB)
+|-- documentation.md (163.6KB)
+|-- gitupdate.ps1
+|-- install.ps1 (25.4KB)
+|-- LICENSE (1.1KB)
+|-- newmachinesetup.txt
+|-- README.md (57.3KB)
+|-- rebuild.ps1
+|-- restore_instructions.txt
+|-- restore.ps1 (2.9KB)
+|-- setup_permissions.ps1 (12.6KB)
+|-- slides.html (66.9KB)
+|-- test.txt
+\-- uninstall.ps1 (7.4KB)
+
+============================================================
+SUMMARY
+============================================================
+Total Files: 95
+Total Size: 14.26 MB
+
+By Type:
+  .jsx : 18 files
+  .js : 13 files
+  .css : 9 files
+  .py : 8 files
+  .ps1 : 7 files
+  .svg : 6 files
+  .md : 4 files
+  .txt : 4 files
+  .log : 3 files
+  .html : 3 files
+  .bat : 3 files
+  .gitignore : 2 files
+  .json : 2 files
+  .pem : 2 files
+  .backup : 1 files

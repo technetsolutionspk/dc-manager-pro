@@ -1,0 +1,2 @@
+to restore from backup file run this from power shell
+.\restore.ps1 -BackupFile "C:\Backups\ADManagerPro\20251215-020000.zip"

@@ -1,0 +1,20 @@
+git clone https://github.com/yourusername/ad-manager-pro.git "C:\AD Pro"
+cd "C:\AD Pro\public"
+
+# Setup backend
+cd backend
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+notepad .env  # fill in real values
+
+# Setup frontend
+cd ..\frontend
+npm install
+npm run build
+Copy-Item -Path "dist\*" -Destination "..\backend\static" -Recurse -Force
+
+# Start
+cd ..\backend
+.\start.bat

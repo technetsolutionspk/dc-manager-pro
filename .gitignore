@@ -1,0 +1,19 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/database/audit.db
+backend/logs/
+backend/static/
+
+# Secrets
+backend/.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Temp
+C:\DCPro_*
+*.zip

@@ -1,0 +1,36 @@
+# DC Manager Pro — Python Backend Requirements
+# Install with: pip install -r requirements.txt
+
+# ── Core Framework ──────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# ── LDAP / Active Directory ─────────────────────────────────
+ldap3==2.9.1
+
+# ── Database (SQLite ORM) ───────────────────────────────────
+sqlalchemy==2.0.30
+alembic==1.13.1
+
+# ── Authentication & Security ───────────────────────────────
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.1
+cryptography==42.0.5
+
+# ── Data Processing ─────────────────────────────────────────
+pandas==2.2.2
+openpyxl==3.1.2
+python-dateutil==2.9.0
+
+# ── Email Notifications ─────────────────────────────────────
+aiosmtplib==3.0.1
+jinja2==3.1.4
+
+# ── Rate Limiting ───────────────────────────────────────────
+slowapi==0.1.9
+
+# ── Report Generation ───────────────────────────────────────
+reportlab==4.2.0
+xlsxwriter==3.2.0

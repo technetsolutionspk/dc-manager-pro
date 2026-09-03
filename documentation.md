@@ -1457,6 +1457,177 @@ if (Test-Path $docPath) {
     }
 }
 ---
+---
+# v2.6.1 — Role-Based Sidebar Permissions
+
+## Overview
+DC Manager Pro v2.6.1 introduces a dynamic sidebar permission system that allows Administrators to control which pages are visible to Helpdesk and Viewer roles without requiring code changes or restarts.
+
+## How It Works
+- **Admin** — Always has full access to all pages regardless of permission settings
+- **Helpdesk** — Sees only pages toggled ON in Settings → Permissions tab
+- **Viewer** — Sees only pages toggled ON in Settings → Permissions tab
+- **Settings** — Always Admin only, not configurable
+- **Audit Logs** — Always Admin only, not configurable
+- **Route Protection** — Hidden pages are also blocked at URL level. Direct URL access redirects to Dashboard
+
+## Configuring Permissions
+1. Login as Admin
+2. Navigate to **Settings → Permissions**
+3. Toggle modules ON or OFF for the **Helpdesk** and **Viewer** columns
+4. Use **All On** or **All Off** to bulk toggle a role
+5. Click **Save Permissions**
+6. Changes take effect immediately for active sessions
+
+## Toggleable Modules
+
+| Module | Helpdesk | Viewer |
+|---|---|---|
+| Dashboard | Toggleable | Toggleable |
+| Users | Toggleable | Toggleable |
+| Groups | Toggleable | Toggleable |
+| Computers | Toggleable | Toggleable |
+| OUs | Toggleable | Toggleable |
+| DNS | Toggleable | Toggleable |
+| DHCP | Toggleable | Toggleable |
+| Service Accounts | Toggleable | Toggleable |
+| GPOs | Toggleable | Toggleable |
+| User Photos | Toggleable | Toggleable |
+| Templates | Toggleable | Toggleable |
+| Workflows | Toggleable | Toggleable |
+| Sessions | Toggleable | Toggleable |
+| Reports | Toggleable | Toggleable |
+| Settings | Admin Only | Admin Only |
+| Audit Logs | Admin Only | Admin Only |
+
+## Storage
+Permissions are stored in the `app_settings` table as two JSON-based setting keys:
+- `helpdesk_sidebar_permissions`
+- `viewer_sidebar_permissions`
+
+Example stored value:
+
+~~~json
+{
+  "dashboard": true,
+  "users": true,
+  "groups": true,
+  "computers": true,
+  "ous": false,
+  "dns": true,
+  "dhcp": true,
+  "service-accounts": false,
+  "gpo": false,
+  "photos": false,
+  "templates": true,
+  "workflows": true,
+  "sessions": false,
+  "reports": true
+}
+~~~
+
+## Backend Implementation
+
+### Permission Helper
+A new helper function `require_permission(module)` was added to `app.py`.
+
+Behavior:
+- **Admin** always allowed
+- **Settings** and **Audit Logs** always denied for non-admins
+- **Helpdesk** and **Viewer** permissions are read from the `app_settings` JSON values
+- Returns HTTP 403 if access is disabled for the current role
+
+### Updated Endpoint Protection
+The following endpoint groups now use dynamic permission checks:
+
+#### DNS Endpoints
+- `GET /api/dns/zones`
+- `GET /api/dns/zones/{zone_name}/records`
+- `POST /api/dns/zones/{zone_name}/records/a`
+- `POST /api/dns/zones/{zone_name}/records/cname`
+- `POST /api/dns/zones/{zone_name}/records/ptr`
+- `PUT /api/dns/zones/{zone_name}/records`
+- `DELETE /api/dns/zones/{zone_name}/records`
+- `GET /api/dns/test`
+
+#### DHCP Endpoints
+- `GET /api/dhcp/scopes`
+- `GET /api/dhcp/scopes/{scope_id}/reservations`
+- `POST /api/dhcp/scopes/{scope_id}/reservations`
+- `PUT /api/dhcp/scopes/{scope_id}/reservations/{ip}`
+- `DELETE /api/dhcp/scopes/{scope_id}/reservations/{ip}`
+- `GET /api/dhcp/scopes/{scope_id}/leases`
+- `POST /api/dhcp/scopes/{scope_id}/leases/{ip}/release`
+- `DELETE /api/dhcp/scopes/{scope_id}/leases/{ip}`
+- `GET /api/dhcp/test`
+
+#### Sessions Endpoints
+- `GET /api/sessions`
+- `DELETE /api/sessions/{session_id}`
+
+## Frontend Implementation
+
+### Settings Page
+A new **Permissions** tab was added to `Settings.jsx`.
+
+Features:
+- Permission matrix for Helpdesk and Viewer
+- Toggle controls for all configurable modules
+- **All On** and **All Off** shortcuts per role
+- Locked **Admin Only** rows for Settings and Audit Logs
+- Save button persists permissions through `PUT /api/settings`
+
+### Sidebar
+`Layout.jsx` now:
+- Fetches permissions from `GET /api/settings` on load
+- Dynamically filters sidebar items for Helpdesk and Viewer
+- Keeps Admin visibility unchanged
+- Preserves badges, collapse behavior, domain switcher, and user profile panel
+
+### Route Guard
+`App.jsx` now includes a `PermissionRoute` component.
+
+Behavior:
+- Checks permissions before allowing access to toggleable routes
+- Admin bypasses checks
+- Non-admin users are redirected to Dashboard if access is disabled
+- Settings and Audit Logs remain protected by `AdminRoute`
+
+## Security Notes
+- Sidebar visibility is not the only control; backend access is also enforced
+- Direct URL navigation does not bypass restrictions
+- Admin cannot accidentally remove their own access
+- Settings and Audit Logs remain permanently restricted to Admin role
+- Permission changes apply immediately without restart
+
+## Operational Notes
+- Frontend was rebuilt and redeployed to `backend/static`
+- Backend health verified successfully after deployment
+- Git repository updated and pushed to GitHub
+- Backup and restore scripts remain compatible with v2.6.1
+
+## Changelog Entry
+
+### v2.6.1
+
+#### Permissions System
+- Added dynamic sidebar permission system for Helpdesk and Viewer roles
+- Added new **Permissions** tab in Settings
+- Added permission matrix for 14 toggleable modules
+- Added `helpdesk_sidebar_permissions` and `viewer_sidebar_permissions` settings
+- Added `require_permission()` helper to backend
+- Updated DNS, DHCP, and Sessions endpoints to use dynamic permission checks
+- Added dynamic sidebar filtering in `Layout.jsx`
+- Added route-level access control in `App.jsx`
+- Redirects unauthorized direct URL access to Dashboard
+- Settings and Audit Logs remain Admin only
+
+#### Backup / Restore / Git
+- backup.ps1 updated to include full environment support
+- restore.ps1 updated with interactive restore and verification
+- gitupdate.ps1 updated for DC Manager Pro naming and workflow
+- Frontend rebuilt and redeployed successfully
+- Changes committed and pushed to GitHub
 
 # 23. DOCUMENT METADATA
 
@@ -1478,3 +1649,122 @@ DNS Management: Full CRUD for A, CNAME, PTR records with PowerShell remoting and
 DHCP Management: Reservations CRUD + Leases view/release with PowerShell remoting and failover
 Bulk Operations: Users, Computers, DNS Records, DHCP Reservations, DHCP Leases
 License: MIT
+
+---
+
+# v2.6.2 — DHCP Lease Deletion Fix
+
+## Overview
+DC Manager Pro v2.6.2 fixes a critical bug where DHCP lease deletion and release operations always failed with the misleading error message **"No DHCP server available"**, even when the DHCP server was fully reachable and the service account had all required permissions.
+
+## Root Cause
+Two issues in `backend/dhcp_service.py` caused the failure:
+
+### Issue 1: Incorrect Parameter Set
+The `Remove-DhcpServerv4Lease` PowerShell cmdlet does **not** accept both `-ScopeId` and `-IPAddress` parameters simultaneously. Passing both triggers a PowerShell parameter binding error:
+
+> `Parameter set cannot be resolved using the specified named parameters. (AmbiguousParameterSet)`
+
+Because an IP address is globally unique on a DHCP server, the cmdlet only requires `-IPAddress`.
+
+### Issue 2: Missing Confirmation Suppression
+`Remove-DhcpServerv4Lease` and `Remove-DhcpServerv4Reservation` are interactive by default. When invoked from a background subprocess with no console, PowerShell aborts because it cannot display the confirmation prompt:
+
+> *"Are you sure you want to perform this action?"*
+
+Both failures caused the backend to fall through to the failover branch, which then returned the generic **"No DHCP server available"** error, masking the real cause.
+
+## The Fix
+Updated `release_lease()` and `delete_reservation()` methods in `backend/dhcp_service.py`:
+
+### Before (Broken)
+```python
+def release_lease(self, scope_id: str, ip: str) -> Tuple[bool, str]:
+    script = f"""
+Get-DhcpServerv4Lease -ScopeId '{scope_id}' -IPAddress '{ip}' | Remove-DhcpServerv4Lease
+"""
+```
+
+### After (Fixed)
+```python
+def release_lease(self, scope_id: str, ip: str) -> Tuple[bool, str]:
+    script = f"""
+Remove-DhcpServerv4Lease -IPAddress '{ip}' -Confirm:$false
+"""
+```
+
+### Reservation Deletion Fix
+```python
+# Before
+Remove-DhcpServerv4Reservation -ScopeId '{scope_id}' -IPAddress '{ip}'
+
+# After
+Remove-DhcpServerv4Reservation -ScopeId '{scope_id}' -IPAddress '{ip}' -Confirm:$false
+```
+
+## Diagnostic Process
+This issue was traced through the following steps:
+1. Verified database contained correct DHCP server IPs in `domain_profiles` table
+2. Confirmed backend was returning `"No DHCP server available"` from failover fallback branch
+3. Verified service account (`svc-admanager`) group memberships on the DC — all correct:
+   - Administrators
+   - DHCP Administrators
+   - DnsAdmins
+   - Remote Management Users
+4. Ran direct PowerShell remoting test to DHCP server which revealed the actual error: `AmbiguousParameterSet`
+5. Confirmed working syntax uses only `-IPAddress` with `-Confirm:$false`
+6. Applied patch and validated deletion from the web UI
+
+## Files Modified
+- `backend/dhcp_service.py` — Fixed `release_lease()` and `delete_reservation()` methods
+
+## Impact
+- DHCP lease release from **Active Leases** tab now works
+- DHCP lease bulk release now works
+- DHCP reservation deletion now works
+- DHCP reservation bulk deletion now works
+- Actual PowerShell errors are now correctly propagated (no longer masked as "No DHCP server available" unless the server is truly unreachable)
+
+## Troubleshooting Notes Added
+Added to Section 19 (Troubleshooting):
+
+**Symptom:** `{"detail":"No DHCP server available"}` returned even though DHCP server is reachable and permissions are correct.
+
+**Cause:** In versions prior to v2.6.2, the PowerShell command passed both `-ScopeId` and `-IPAddress` to `Remove-DhcpServerv4Lease`, which is invalid. The failure fell through to the failover branch and returned a misleading error.
+
+**Fix:** Upgrade to v2.6.2 or manually patch `backend/dhcp_service.py`:
+- `release_lease()` — use only `-IPAddress '{ip}' -Confirm:$false`
+- `delete_reservation()` — add `-Confirm:$false`
+
+**Verification:** Restart backend service and test deletion from the DHCP → Active Leases tab.
+
+## Git Update & Push Commands
+
+Run these commands from the project root:
+
+```powershell
+cd "C:\DC Pro\public"
+git add .
+git commit -m "v2.6.2: Fix DHCP lease/reservation deletion - remove invalid -ScopeId param and add -Confirm:false"
+git push origin main
+git tag -a v2.6.2 -m "v2.6.2 - DHCP lease deletion fix"
+git push origin v2.6.2
+```
+
+## Changelog Entry
+
+### v2.6.2
+
+#### Bug Fixes
+- Fixed DHCP lease deletion returning `"No DHCP server available"` error
+- Fixed DHCP lease bulk release operations
+- Fixed DHCP reservation deletion missing `-Confirm:$false` flag
+- Fixed DHCP reservation bulk delete operations
+- Removed invalid `-ScopeId` parameter from `Remove-DhcpServerv4Lease` command
+- Added `-Confirm:$false` to all remote DHCP `Remove-*` cmdlets
+- Actual PowerShell errors are now propagated correctly instead of being masked by the failover fallback
+
+#### Files Modified
+- `backend/dhcp_service.py` — `release_lease()` and `delete_reservation()` methods corrected
+
+---

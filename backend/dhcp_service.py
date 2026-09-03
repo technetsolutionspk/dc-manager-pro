@@ -1,4 +1,4 @@
-"""
+﻿"""
 DC Manager Pro - DHCP Service (v2.6.0)
 ======================================
 Handles DHCP scope, reservation, and lease management via PowerShell remoting.
@@ -33,7 +33,7 @@ class DHCPService:
         self.service_password = get_domain_password(domain_profile)
         self.active_server = None
 
-    # ── Core PowerShell execution ──────────────────────────
+    # â”€â”€ Core PowerShell execution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def _run_ps(self, script: str) -> Tuple[bool, str, str]:
         """Execute PowerShell with automatic failover."""
         if self.primary_server:
@@ -89,7 +89,7 @@ try {{
         except Exception as e:
             return False, "", str(e)
 
-    # ── Scopes ──────────────────────────────────────────────
+    # â”€â”€ Scopes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def get_scopes(self) -> Tuple[bool, List[Dict], str]:
         """List all DHCPv4 scopes."""
         script = """
@@ -141,7 +141,7 @@ Get-DhcpServerv4Scope | ForEach-Object {
         except json.JSONDecodeError as e:
             return False, [], f"JSON parse error: {e}"
 
-    # ── Reservations ────────────────────────────────────────
+    # â”€â”€ Reservations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def get_reservations(self, scope_id: str) -> Tuple[bool, List[Dict], str]:
         """List reservations in a scope."""
         script = f"""
@@ -220,14 +220,14 @@ Set-DhcpServerv4Reservation -ScopeId '{scope_id}' -IPAddress '{ip}' {' '.join(pa
 
     def delete_reservation(self, scope_id: str, ip: str) -> Tuple[bool, str]:
         script = f"""
-Remove-DhcpServerv4Reservation -ScopeId '{scope_id}' -IPAddress '{ip}'
+Remove-DhcpServerv4Reservation -ScopeId '{scope_id}' -IPAddress '{ip}' -Confirm:$false
 """
         success, stdout, stderr = self._run_ps(script)
         if not success:
             return False, stderr
         return True, f"Reservation deleted: {ip}"
 
-    # ── Leases ──────────────────────────────────────────────
+    # â”€â”€ Leases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def get_leases(self, scope_id: str) -> Tuple[bool, List[Dict], str]:
         """List active leases in a scope."""
         script = f"""
@@ -267,7 +267,7 @@ Get-DhcpServerv4Lease -ScopeId '{scope_id}' | ForEach-Object {{
     def release_lease(self, scope_id: str, ip: str) -> Tuple[bool, str]:
         """Release an active DHCP lease (equivalent to force renewal)."""
         script = f"""
-Remove-DhcpServerv4Lease -ScopeId '{scope_id}' -IPAddress '{ip}'
+Remove-DhcpServerv4Lease -IPAddress '{ip}' -Confirm:$false
 """
         success, stdout, stderr = self._run_ps(script)
         if not success:
@@ -278,7 +278,7 @@ Remove-DhcpServerv4Lease -ScopeId '{scope_id}' -IPAddress '{ip}'
         """Alias for release_lease - removes lease record entirely."""
         return self.release_lease(scope_id, ip)
 
-    # ── Health check ────────────────────────────────────────
+    # â”€â”€ Health check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def test_connection(self) -> Tuple[bool, str]:
         """Test if DHCP server is reachable."""
         script = "Get-DhcpServerSetting | Select-Object -First 1"
@@ -288,9 +288,10 @@ Remove-DhcpServerv4Lease -ScopeId '{scope_id}' -IPAddress '{ip}'
         return False, stderr
 
 
-# ═══════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # Factory
-# ═══════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 def get_dhcp_service_for_domain(domain_profile: DomainProfile) -> DHCPService:
     """Create DHCPService instance for the given domain profile."""
     return DHCPService(domain_profile)
+

@@ -1,4 +1,4 @@
-"""
+﻿"""
 DC Manager Pro - Active Directory Service
 ==========================================
 Contains: ADService class with all LDAP operations + Windows LAPS integration
@@ -722,7 +722,10 @@ class ADService:
 
     def get_computers(self, search=None):
         conn = self._get_connection()
-        f    = f"(&(objectClass=computer)(cn=*{search}*))" if search else "(objectClass=computer)"
+        if search:
+            f = f"(&(objectClass=computer)(|(cn=*{search}*)(dNSHostName=*{search}*)(operatingSystem=*{search}*)(operatingSystemVersion=*{search}*)(description=*{search}*)))"
+        else:
+            f = "(objectClass=computer)"
         try:
             conn.search(
                 search_base   = self.base_dn,

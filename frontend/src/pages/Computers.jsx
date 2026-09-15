@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Search, RefreshCw, Monitor, Plus, Trash2, X, Move,
   CheckSquare, Square, MoreVertical, MonitorCheck, MonitorX,
@@ -48,7 +48,7 @@ export default function Computers() {
     setTimeout(() => setMessage(null), 4000)
   }
 
-  // â”€â”€ Sort Handler â”€â”€
+  // ── Sort Handler ──
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
@@ -186,7 +186,7 @@ export default function Computers() {
           <h1 className="text-3xl font-bold mb-1">Computers</h1>
           <p className="text-slate-400">
             {filteredComputers.length} of {computers.length} computers
-            {selectedComputers.size > 0 && <span className="ml-2 text-blue-400">â€¢ {selectedComputers.size} selected</span>}
+            {selectedComputers.size > 0 && <span className="ml-2 text-blue-400">• {selectedComputers.size} selected</span>}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -323,14 +323,14 @@ export default function Computers() {
                       </div>
                     </td>
                     <td className="p-4 text-sm">
-                      <div>{c.os || 'â€”'}</div>
+                      <div>{c.os || '—'}</div>
                       {c.osVersion && <div className="text-xs text-slate-500">{c.osVersion}</div>}
                     </td>
-                    <td className="p-4 text-sm text-slate-400 font-mono">{c.dnsName || 'â€”'}</td>
+                    <td className="p-4 text-sm text-slate-400 font-mono">{c.dnsName || '—'}</td>
                     <td className="p-4 text-sm text-slate-400">
                       {c.lastLogon ? (
                         <span title={c.lastLogon}>{new Date(c.lastLogon).toLocaleDateString()}</span>
-                      ) : 'â€”'}
+                      ) : '—'}
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -503,7 +503,7 @@ function CreateComputerModal({ onClose, onSuccess, onError }) {
             autoFocus
           />
           <p className="text-xs text-slate-500 mt-1">
-            Max 15 chars, letters/numbers/hyphens only â€¢ Will be created as {form.name || 'NAME'}$
+            Max 15 chars, letters/numbers/hyphens only • Will be created as {form.name || 'NAME'}$
           </p>
         </div>
 
@@ -531,7 +531,7 @@ function CreateComputerModal({ onClose, onSuccess, onError }) {
         </div>
 
         <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-xs text-blue-300">
-          â„¹ï¸ Note: This creates an empty computer account. The actual computer must be joined to the domain using the corresponding name.
+          ℹ️ Note: This creates an empty computer account. The actual computer must be joined to the domain using the corresponding name.
         </div>
       </div>
 
@@ -760,7 +760,7 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
   }
 
   const formatDate = (iso) => {
-    if (!iso) return 'â€”'
+    if (!iso) return '—'
     try { return new Date(iso).toLocaleString() } catch { return iso }
   }
 
@@ -779,7 +779,7 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
   }
 
   return (
-    <Modal title={`ðŸ”‘ LAPS Password - ${computer.name}`} onClose={onClose} wide>
+    <Modal title={`🔑 LAPS Password - ${computer.name}`} onClose={onClose} wide>
       {step === 'reason' && (
         <div className="space-y-4">
           <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
@@ -843,7 +843,7 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
         <div className="space-y-4">
           {showPassword && (
             <div className="p-2 bg-red-500/10 border border-red-500/30 rounded-lg text-center text-sm text-red-300">
-              â± Password will auto-hide in <span className="font-bold">{countdown}s</span>
+              ⏱ Password will auto-hide in <span className="font-bold">{countdown}s</span>
             </div>
           )}
 
@@ -856,9 +856,9 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
               <div className="text-xs text-slate-400 mb-1">Source</div>
               <div className="text-sm">
                 {data.source === 'EncryptedPassword' ? (
-                  <span className="text-green-400">ðŸ”’ Encrypted</span>
+                  <span className="text-green-400">🔒 Encrypted</span>
                 ) : (
-                  <span className="text-yellow-400">ðŸ“„ Plain Text</span>
+                  <span className="text-yellow-400">📄 Plain Text</span>
                 )}
               </div>
             </div>
@@ -881,7 +881,7 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
                   }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-700 rounded"
                 >
-                  {showPassword ? 'ðŸ™ˆ' : 'ðŸ‘'}
+                  {showPassword ? '🙈' : '👁'}
                 </button>
               </div>
               <button
@@ -889,7 +889,7 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
                 className="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-2"
                 title="Copy to clipboard"
               >
-                ðŸ“‹ Copy
+                📋 Copy
               </button>
             </div>
           </div>
@@ -923,14 +923,14 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
                 disabled={loading}
                 className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm"
               >
-                {loading ? 'Loading...' : 'ðŸ“œ History'}
+                {loading ? 'Loading...' : '📜 History'}
               </button>
               <button
                 onClick={handleRotate}
                 disabled={rotating}
                 className="px-3 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm disabled:opacity-50"
               >
-                {rotating ? 'Rotating...' : 'ðŸ”„ Force Rotation'}
+                {rotating ? 'Rotating...' : '🔄 Force Rotation'}
               </button>
             </div>
             <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg">
@@ -948,7 +948,7 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
               onClick={() => setStep('viewing')}
               className="text-sm text-blue-400 hover:text-blue-300"
             >
-              â† Back to current password
+              ← Back to current password
             </button>
           </div>
 
@@ -962,13 +962,13 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
                 <div key={i} className="p-3 bg-slate-900 rounded-lg border border-slate-700">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-xs text-slate-400">
-                      {i === 0 ? 'ðŸ”µ Current' : `#${i} - ${formatDate(h.updated)}`}
+                      {i === 0 ? '🔵 Current' : `#${i} - ${formatDate(h.updated)}`}
                     </div>
                     <button
                       onClick={() => copyToClipboard(h.password, `Password #${i}`)}
                       className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
                     >
-                      ðŸ“‹ Copy
+                      📋 Copy
                     </button>
                   </div>
                   <div className="font-mono text-sm break-all bg-slate-800 p-2 rounded">
@@ -993,9 +993,9 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
   )
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// SortHeader â€” Sortable Table Column Header
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────
+// SortHeader — Sortable Table Column Header
+// ─────────────────────────────────────────────────────────
 function SortHeader({ field, label, sortField, sortDir, onSort }) {
   const isActive = sortField === field
   return (
@@ -1016,6 +1016,3 @@ function SortHeader({ field, label, sortField, sortDir, onSort }) {
     </th>
   )
 }
-
-
-

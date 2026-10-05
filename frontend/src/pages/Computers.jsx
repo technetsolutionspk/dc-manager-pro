@@ -343,7 +343,7 @@ export default function Computers() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-1">
-                        {user.role === 'Admin' && (
+                        {(user.role === 'Admin' || user.role === 'Helpdesk') && (
                           <button
                             onClick={() => { setSelected(c); setShowLaps(true) }}
                             className="p-2 hover:bg-slate-700 rounded text-amber-400"

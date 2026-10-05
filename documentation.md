@@ -1768,3 +1768,39 @@ git push origin v2.6.2
 - `backend/dhcp_service.py` — `release_lease()` and `delete_reservation()` methods corrected
 
 ---
+---
+
+# v2.6.4 — Character Encoding (Mojibake) Repair & Clean UTF-8 Search
+
+## Overview
+DC Manager Pro v2.6.4 resolves UI text and icon corruption (mojibake such as `ðŸ'`, `â±`, `ðŸ"œ`) across the application caused by PowerShell 5.1 default ANSI/Windows-1252 encoding during file modifications. All source files were restored from clean UTF-8 Git history, and the multi-column search enhancement was re-applied using strict .NET UTF-8 (No BOM) stream writers.
+
+## Root Cause
+When PowerShell 5.1 reads or writes files using `Get-Content` / `Set-Content` without specifying explicit UTF-8 encoding, it defaults to ANSI (Windows-1252). This converted raw Unicode emojis (🔑, 🔒, ⏱️, 📋, 📜, 🔄) into garbled multi-byte sequences. When Vite compiled the frontend bundle, the garbled text was minified into the output JavaScript assets.
+
+## The Fix
+1. **Source File Restoration:** Restored clean UTF-8 source code from Git tag `v2.6.2` (`git checkout v2.6.2 -- frontend/src/`).
+2. **Strict UTF-8 Code Ingestion:** Modified patching scripts to use native .NET `System.IO.File` methods with `System.Text.UTF8Encoding($false)` to prevent encoding loss.
+3. **Multi-Column Search Retention:** Maintained the real-time client-side multi-column search on `Computers.jsx` and the 5-attribute LDAP query in `ad_service.py` without introducing character corruption.
+4. **Clean Asset Deployment:** Cleared `backend/static/` completely before copying the freshly built, uncorrupted production bundle.
+
+## Files Modified
+- `frontend/src/pages/Computers.jsx` — Restored UTF-8 encoding; multi-column search clean patch
+- `backend/ad_service.py` — Multi-attribute LDAP search filter retained
+
+## Changelog Entry
+
+### v2.6.4
+
+#### Bug Fixes
+- Fixed UI text and icon corruption (mojibake) across modals and buttons
+- Fixed file encoding degradation caused by PowerShell 5.1 default ANSI file I/O
+- Rebuilt production static assets with clean UTF-8 source code
+
+#### Improvements
+- Retained real-time multi-column search on Computers page across all 8 columns
+- Standardized all automated build and patch scripts to use strict .NET UTF-8 (No BOM) stream handlers
+
+#### Files Modified
+- `frontend/src/pages/Computers.jsx`
+- `backend/ad_service.py`

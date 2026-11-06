@@ -1,4 +1,17 @@
-# AD Manager Pro — Complete Documentation v2.6.0
+# WORKING INSTRUCTIONS (AI ASSISTANT RULES)
+
+These rules must be followed for all future changes to DC Manager Pro:
+
+1. **Direct Commands Only** — Always provide direct file edit commands or PowerShell scripts to run. Never provide vague descriptions without executable commands.
+2. **Inspect Before Edit** — If the exact file content is unknown, inspect the file first using `Get-Content` or `Select-String` before making changes.
+3. **Documentation Snippet After Every Change** — After every code change, provide a documentation update snippet in Markdown format inside a single fenced code block, ready to append or insert.
+4. **Git Update Commands** — After every change, provide the exact `git add`, `git commit`, and `git push` commands.
+5. **Step-by-Step Execution** — Always provide instructions one step at a time. Wait for confirmation that the current step is complete before proceeding to the next step.
+6. **UTF-8 Safe File Writes** — All automated file modifications must use `System.IO.File` with `System.Text.UTF8Encoding($false)` to prevent mojibake (per v2.6.4 fix). Never use `Set-Content` or `Add-Content` without explicit `-Encoding UTF8`.
+7. **Rebuild & Redeploy** — After any frontend change, rebuild with `npm run build`, clear `backend/static/`, copy `dist/` contents, and restart the scheduled task.
+8. **Backup Before Changes** — Run `backup.ps1` before making production changes.
+
+# DC Manager Pro — Complete Documentation v2.6.0
 
 ## Enterprise Active Directory Management Platform
 ## Multi-Domain Support | DNS/DHCP Management | Setup Guide | API Reference | Architecture | Features | Troubleshooting
@@ -1804,3 +1817,32 @@ When PowerShell 5.1 reads or writes files using `Get-Content` / `Set-Content` wi
 #### Files Modified
 - `frontend/src/pages/Computers.jsx`
 - `backend/ad_service.py`
+## v2.6.5 — Helpdesk Service Account Password Reset
+
+### Overview
+Helpdesk users can now reset passwords for service accounts. Previously this was Admin-only.
+
+### Changes
+- Backend: `POST /api/service-accounts/{id}/reset-password` now accepts Admin and Helpdesk roles
+- Frontend: Reset Password button visible to Helpdesk on Service Account cards
+- Edit, Delete, Create, and Import remain Admin-only
+- System-critical service account deletion remains Admin-only
+- Improved error messages for AD password policy rejections
+
+### Permission Matrix Update
+
+| Feature | Admin | Helpdesk | Viewer |
+|---|---|---|---|
+| Reset service account passwords | Yes | Yes | No |
+| Edit service accounts | Yes | No | No |
+| Delete service accounts | Yes | No | No |
+| Create/import service accounts | Yes | No | No |
+
+### Files Modified
+- `backend/app.py` — Reset password endpoint role check and error messages
+- `frontend/src/pages/ServiceAccounts.jsx` — Button visibility for Helpdesk role
+
+### Known Behavior
+- Passwords must meet AD complexity requirements (uppercase, lowercase, digit, special char, min 8 chars)
+- Passwords cannot contain the service account's username or display name (AD policy)
+- Use the Generate button for guaranteed-compliant passwords

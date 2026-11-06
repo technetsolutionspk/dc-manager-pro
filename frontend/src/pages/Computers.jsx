@@ -219,7 +219,7 @@ export default function Computers() {
               )}
             </div>
           )}
-          {user.role === 'Admin' && (
+          {(user.role === 'Admin' || user.role === 'Helpdesk') && (
             <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-2">
               <Plus size={16} /> New Computer
             </button>
@@ -683,52 +683,59 @@ function BulkMoveModal({ computers, onClose, onSuccess, onError }) {
 }
 
 function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
-  const [step, setStep] = useState('reason')
-  const [reason, setReason] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [data, setData]       = useState(null)
+  const [step, setStep]       = useState('viewing') // 'viewing' | 'history'
   const [history, setHistory] = useState([])
-  const [showPassword, setShowPassword] = useState(false)
-  const [countdown, setCountdown] = useState(30)
-  const [rotating, setRotating] = useState(false)
+  const [copied, setCopied]   = useState(false)
+  const [timer, setTimer]     = useState(30)
+  const [hidden, setHidden]   = useState(false)
+
+  const loadPassword = async () => {
+    setLoading(true)
+    try {
+      const result = await getLapsPassword(computer.name, 'Viewed via Web UI')
+      setData(result)
+      setHidden(false)
+      setTimer(30)
+    } catch (err) {
+      onError(err.response?.data?.detail || 'Failed to retrieve LAPS password')
+      onClose()
+    }
+    setLoading(false)
+  }
 
   useEffect(() => {
-    if (step !== 'viewing' || !showPassword) return
-    setCountdown(30)
+    if (computer?.name) {
+      loadPassword()
+    }
+  }, [computer?.name])
+
+  useEffect(() => {
+    if (step !== 'viewing' || hidden || timer <= 0) return
     const interval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          setShowPassword(false)
-          clearInterval(interval)
+      setTimer(t => {
+        if (t <= 1) {
+          setHidden(true)
           return 0
         }
-        return prev - 1
+        return t - 1
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [step, showPassword])
+  }, [step, hidden, timer])
 
-  const handleFetchPassword = async () => {
-    if (!reason || reason.trim().length < 5) {
-      onError('Reason must be at least 5 characters')
-      return
-    }
-    setLoading(true)
-    try {
-      const result = await getLapsPassword(computer.name, reason.trim())
-      setData(result)
-      setStep('viewing')
-      setShowPassword(true)
-    } catch (err) {
-      onError(err.response?.data?.detail || 'Failed to retrieve LAPS password')
-    }
-    setLoading(false)
+  const handleCopy = () => {
+    if (!data?.password) return
+    navigator.clipboard.writeText(data.password)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleFetchHistory = async () => {
     setLoading(true)
     try {
-      const result = await getLapsHistory(computer.name, reason.trim())
+      const result = await getLapsHistory(computer.name, 'Viewed via Web UI')
       setHistory(result.history || [])
       setStep('history')
     } catch (err) {
@@ -738,255 +745,114 @@ function LapsPasswordModal({ computer, onClose, onSuccess, onError }) {
   }
 
   const handleRotate = async () => {
-    if (!confirm(`Force password rotation for ${computer.name}?\n\nThe computer will get a new password on its next AD check-in (usually within 1 hour).`)) return
-    setRotating(true)
+    if (!confirm(`Force password rotation for ${computer.name}?`)) return
+    setLoading(true)
     try {
       const result = await rotateLapsPassword(computer.name)
       onSuccess(result.message)
       onClose()
     } catch (err) {
-      onError(err.response?.data?.detail || 'Rotation failed')
+      onError(err.response?.data?.detail || 'Failed to rotate password')
     }
-    setRotating(false)
-  }
-
-  const copyToClipboard = async (text, label = 'Password') => {
-    try {
-      await navigator.clipboard.writeText(text)
-      onSuccess(`${label} copied to clipboard`)
-    } catch {
-      onError('Copy failed - browser blocked clipboard access')
-    }
-  }
-
-  const formatDate = (iso) => {
-    if (!iso) return '—'
-    try { return new Date(iso).toLocaleString() } catch { return iso }
-  }
-
-  const timeUntilExpiry = () => {
-    if (!data?.expires) return null
-    try {
-      const now = Date.now()
-      const exp = new Date(data.expires).getTime()
-      const diff = exp - now
-      if (diff < 0) return { text: 'EXPIRED - rotation pending', color: 'text-red-400' }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      if (days > 0) return { text: `${days}d ${hours}h until rotation`, color: 'text-green-400' }
-      return { text: `${hours}h until rotation`, color: 'text-yellow-400' }
-    } catch { return null }
+    setLoading(false)
   }
 
   return (
     <Modal title={`🔑 LAPS Password - ${computer.name}`} onClose={onClose} wide>
-      {step === 'reason' && (
-        <div className="space-y-4">
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-            <div className="flex items-start gap-2 text-amber-300 text-sm">
-              <Key size={18} className="mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="font-semibold mb-1">Sensitive Operation - Audit Log Required</div>
-                <div className="text-xs text-amber-200/80">
-                  Retrieving the LAPS local admin password will be permanently logged with your username,
-                  the computer name, timestamp, IP address, and your stated reason.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-3 bg-slate-900 rounded-lg">
-            <div className="text-xs text-slate-400 mb-1">Computer</div>
-            <div className="flex items-center gap-2 font-medium">
-              <Monitor size={16} className="text-purple-400" />
-              {computer.name}
-            </div>
-            <div className="text-xs text-slate-500 mt-1">{computer.dnsName || computer.ou}</div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-slate-400 mb-1">
-              Reason for viewing this password <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Ticket #12345 - User locked out, needs local admin recovery"
-              rows={3}
-              maxLength={200}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
-              autoFocus
-            />
-            <div className="flex justify-between mt-1 text-xs text-slate-500">
-              <span>Minimum 5 characters, max 200</span>
-              <span>{reason.length}/200</span>
-            </div>
-          </div>
-
-          <div className="flex gap-2 justify-end pt-2">
-            <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg">
-              Cancel
-            </button>
-            <button
-              onClick={handleFetchPassword}
-              disabled={loading || reason.trim().length < 5}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50 flex items-center gap-2"
-            >
-              {loading ? <RefreshCw size={16} className="animate-spin" /> : <Key size={16} />}
-              {loading ? 'Retrieving...' : 'Reveal Password'}
-            </button>
-          </div>
+      {loading ? (
+        <div className="p-8 text-center text-slate-400 flex flex-col items-center gap-3">
+          <RefreshCw size={24} className="animate-spin text-amber-400" />
+          <span>Retrieving LAPS password...</span>
         </div>
-      )}
-
-      {step === 'viewing' && data && (
+      ) : (
         <div className="space-y-4">
-          {showPassword && (
-            <div className="p-2 bg-red-500/10 border border-red-500/30 rounded-lg text-center text-sm text-red-300">
-              ⏱ Password will auto-hide in <span className="font-bold">{countdown}s</span>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-slate-900 rounded-lg">
-              <div className="text-xs text-slate-400 mb-1">Local Admin Account</div>
-              <div className="font-mono text-sm">{data.account || 'Administrator'}</div>
-            </div>
-            <div className="p-3 bg-slate-900 rounded-lg">
-              <div className="text-xs text-slate-400 mb-1">Source</div>
-              <div className="text-sm">
-                {data.source === 'EncryptedPassword' ? (
-                  <span className="text-green-400">🔒 Encrypted</span>
-                ) : (
-                  <span className="text-yellow-400">📄 Plain Text</span>
+          {step === 'viewing' && data && (
+            <>
+              {/* Timer Alert */}
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-between text-amber-300 text-sm">
+                <div className="flex items-center gap-2">
+                  <Key size={16} />
+                  <span>Password will auto-hide in <strong>{timer}s</strong></span>
+                </div>
+                {hidden && (
+                  <button onClick={() => { setHidden(false); setTimer(30) }} className="text-xs bg-amber-500/20 hover:bg-amber-500/30 px-2 py-1 rounded">
+                    Show Again
+                  </button>
                 )}
               </div>
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-sm text-slate-400 mb-1">Current Password</label>
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={data.password || ''}
-                  readOnly
-                  className="w-full px-3 py-3 pr-10 bg-slate-900 border-2 border-amber-500/40 rounded-lg font-mono text-lg"
-                />
+              {/* Password Display Box */}
+              <div className="p-4 bg-slate-900 border border-slate-700 rounded-lg flex items-center justify-between gap-3">
+                <div className="flex-1 font-mono text-lg font-bold tracking-wider text-slate-100 select-all overflow-x-auto">
+                  {hidden ? '••••••••••••••••' : (data.password || 'No Password')}
+                </div>
                 <button
-                  onClick={() => {
-                    setShowPassword(!showPassword)
-                    if (!showPassword) setCountdown(30)
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-700 rounded"
+                  onClick={handleCopy}
+                  disabled={hidden || !data.password}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition flex items-center gap-2 flex-shrink-0"
                 >
-                  {showPassword ? '🙈' : '👁'}
+                  {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
-              <button
-                onClick={() => copyToClipboard(data.password)}
-                className="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-2"
-                title="Copy to clipboard"
-              >
-                📋 Copy
-              </button>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-slate-900 rounded-lg">
-              <div className="text-xs text-slate-400 mb-1">Last Updated</div>
-              <div className="text-sm">{formatDate(data.updated)}</div>
-            </div>
-            <div className="p-3 bg-slate-900 rounded-lg">
-              <div className="text-xs text-slate-400 mb-1">Expires</div>
-              <div className="text-sm">{formatDate(data.expires)}</div>
-              {timeUntilExpiry() && (
-                <div className={`text-xs mt-1 ${timeUntilExpiry().color}`}>
-                  {timeUntilExpiry().text}
+              {/* Grid Metadata */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-800">
+                  <div className="text-xs text-slate-400 mb-1">Local Admin Account</div>
+                  <div className="font-semibold text-slate-200">{data.account || 'Administrator'}</div>
                 </div>
+                <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-800">
+                  <div className="text-xs text-slate-400 mb-1">Expires</div>
+                  <div className="font-semibold text-slate-200">{data.expiration || 'N/A'}</div>
+                </div>
+              </div>
+
+              {/* Actions Footer */}
+              <div className="flex justify-between items-center pt-3 border-t border-slate-800">
+                <button
+                  onClick={handleFetchHistory}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition"
+                >
+                  History
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleRotate}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition"
+                  >
+                    Force Rotation
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {step === 'history' && (
+            <div className="space-y-3">
+              <div className="text-sm font-semibold text-slate-300 mb-2">Password History ({history.length})</div>
+              {history.length === 0 ? (
+                <div className="p-4 text-center text-slate-500 text-sm">No history records found</div>
+              ) : (
+                history.map((h, i) => (
+                  <div key={i} className="p-3 bg-slate-900 rounded-lg border border-slate-800 flex justify-between items-center text-sm">
+                    <span className="font-mono font-bold text-slate-200">{h.password || '••••••••'}</span>
+                    <span className="text-xs text-slate-400">{h.expiration || 'Past'}</span>
+                  </div>
+                ))
               )}
-            </div>
-          </div>
-
-          {data.authorizedDecryptor && (
-            <div className="p-2 bg-slate-900 rounded text-xs text-slate-400">
-              Authorized decryptor: <span className="font-mono text-cyan-400">{data.authorizedDecryptor}</span>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-2 justify-between pt-4 border-t border-slate-700">
-            <div className="flex gap-2">
-              <button
-                onClick={handleFetchHistory}
-                disabled={loading}
-                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm"
-              >
-                {loading ? 'Loading...' : '📜 History'}
-              </button>
-              <button
-                onClick={handleRotate}
-                disabled={rotating}
-                className="px-3 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm disabled:opacity-50"
-              >
-                {rotating ? 'Rotating...' : '🔄 Force Rotation'}
-              </button>
-            </div>
-            <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg">
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 'history' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="font-semibold">Password History for {computer.name}</h4>
-            <button
-              onClick={() => setStep('viewing')}
-              className="text-sm text-blue-400 hover:text-blue-300"
-            >
-              ← Back to current password
-            </button>
-          </div>
-
-          {history.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">
-              No password history available
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {history.map((h, i) => (
-                <div key={i} className="p-3 bg-slate-900 rounded-lg border border-slate-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-xs text-slate-400">
-                      {i === 0 ? '🔵 Current' : `#${i} - ${formatDate(h.updated)}`}
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(h.password, `Password #${i}`)}
-                      className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
-                    >
-                      📋 Copy
-                    </button>
-                  </div>
-                  <div className="font-mono text-sm break-all bg-slate-800 p-2 rounded">
-                    {h.password}
-                  </div>
-                  {h.status !== 'Success' && (
-                    <div className="text-xs text-red-400 mt-1">Status: {h.status}</div>
-                  )}
-                </div>
-              ))}
+              <div className="pt-2 flex justify-end">
+                <button onClick={() => setStep('viewing')} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm">
+                  Back to Password
+                </button>
+              </div>
             </div>
           )}
-
-          <div className="flex justify-end pt-2">
-            <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg">
-              Close
-            </button>
-          </div>
         </div>
       )}
     </Modal>

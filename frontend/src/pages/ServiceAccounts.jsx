@@ -24,6 +24,7 @@ export default function ServiceAccounts() {
   const [selected, setSelected]     = useState(null)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const isAdmin = user.role === 'Admin'
+  const isHelpdesk = user.role === 'Helpdesk'
 
   useEffect(() => { load() }, [])
 
@@ -200,6 +201,7 @@ export default function ServiceAccounts() {
               key={account.id}
               account={account}
               isAdmin={isAdmin}
+              isHelpdesk={isHelpdesk}
               onEdit={() => { setSelected(account); setShowEdit(true) }}
               onResetPassword={() => { setSelected(account); setShowReset(true) }}
               onDelete={() => handleDelete(account)}
@@ -284,7 +286,7 @@ function StatCard({ icon: Icon, label, value, color, active, onClick }) {
 // ─────────────────────────────────────────────────────────
 // Account Card
 // ─────────────────────────────────────────────────────────
-function AccountCard({ account, isAdmin, onEdit, onResetPassword, onDelete }) {
+function AccountCard({ account, isAdmin, isHelpdesk, onEdit, onResetPassword, onDelete }) {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 hover:border-indigo-500/50 transition group">
       {/* Header */}
@@ -378,19 +380,21 @@ function AccountCard({ account, isAdmin, onEdit, onResetPassword, onDelete }) {
       </div>
 
       {/* Actions */}
-      {isAdmin && (
+      {(isAdmin || isHelpdesk) && (
         <div className="flex gap-1 pt-3 border-t border-slate-700">
+          {isAdmin && (
           <button onClick={onEdit}
                   className="flex-1 px-2 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs flex items-center justify-center gap-1"
                   title="Edit">
             <Edit size={12} /> Edit
           </button>
+          )}
           <button onClick={onResetPassword}
                   className="flex-1 px-2 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs flex items-center justify-center gap-1"
                   title="Reset Password">
             <KeyRound size={12} /> Password
           </button>
-          {!account.isSystemCritical && (
+          {isAdmin && !account.isSystemCritical && (
             <button onClick={onDelete}
                     className="px-2 py-1.5 bg-slate-700 hover:bg-red-600 rounded text-xs"
                     title="Delete">
